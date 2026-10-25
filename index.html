@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="build" content="pong-v6">
+<meta name="build" content="pong-v7">
 <meta name="theme-color" content="#050a18">
 <title>Bitcoin Pong</title>
 <style>
@@ -25,6 +25,16 @@
   #menuUI h2{margin:0 0 6px;font:800 26px/1.2 var(--ff);color:#ffe2b0;letter-spacing:1px}
   #menuUI .sub{margin:0 0 16px;font:500 14px/1.35 var(--ff);color:rgba(200,215,255,.8)}
   #menuUI .acts{display:flex;flex-direction:column;gap:10px}
+  #menuUI .sub{white-space:pre-line}
+  #menuUI.win{background:radial-gradient(ellipse at center,rgba(2,5,15,.6),rgba(2,5,15,.12) 72%);-webkit-backdrop-filter:none;backdrop-filter:none}
+  #menuUI.win .box{border:2px solid #ffd27a;box-shadow:0 0 30px rgba(247,147,26,.7),0 0 90px rgba(247,147,26,.35),inset 0 0 24px rgba(255,178,56,.15);animation:wpop .45s cubic-bezier(.2,1.5,.4,1) both,wglow 2.2s ease-in-out .45s infinite}
+  #menuUI.win h2{font-size:34px;font-weight:900;letter-spacing:.5px;background:linear-gradient(180deg,#fff1c9,#ffb238 55%,#f7931a);-webkit-background-clip:text;background-clip:text;color:transparent!important;filter:drop-shadow(0 0 10px rgba(247,147,26,.6))}
+  #menuUI.win .sub{color:#ffe2b0}
+  #menuUI.lose{background:rgba(2,6,14,.6)}
+  #menuUI.lose .box{border-color:rgba(90,200,230,.5);box-shadow:0 0 30px rgba(34,230,255,.16)}
+  @keyframes wpop{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:none}}
+  @keyframes wglow{50%{box-shadow:0 0 42px rgba(247,147,26,.9),0 0 120px rgba(247,147,26,.45),inset 0 0 30px rgba(255,178,56,.25)}}
+  @media (prefers-reduced-motion:reduce){#menuUI.win .box{animation:none}}
   #menuUI .acts button{font:700 17px/1.2 var(--ff);color:#1a0d00;background:linear-gradient(180deg,#ffd27a,#f7931a);border:1px solid rgba(255,210,120,.9);border-radius:14px;padding:14px 16px;min-height:48px;cursor:pointer;touch-action:manipulation;box-shadow:0 0 16px rgba(247,147,26,.45)}
   #menuUI .acts button.sec{color:#ffe2b0;background:rgba(12,24,56,.9);border-color:rgba(90,120,200,.55);box-shadow:none}
   #menuUI .acts button:hover,#menuUI .acts button:focus-visible{outline:none;filter:brightness(1.08)}
@@ -77,27 +87,27 @@ const TAU=Math.PI*2,ORANGE='#ff5a2a',CYAN='#22e6ff',GOLD='#ffb238';
 /* ---------- i18n ---------- */
 const NB='\u00a0';
 const L={
- 'en':{name:'English',sub:'Press Space or tap to start',info:'First to 5 wins | You\'re on the left, CPU on the right',pause:'Paused',resume:'Press Space or tap to resume',win:'You win!',lose:'CPU wins',again:'Press Space or tap to play again',you:'YOU',cpu:'CPU',snd:'Sound',on:'On',off:'Off',lang:'Language',infoR:'First to 5 wins | You\'re at the bottom, CPU at the top',helpMR:'Drag left / right to move your paddle | Tap to start | First to 5 wins',diff:'Difficulty',easy:'Easy',normal:'Normal',hard:'Hard',resumeBtn:'Resume',homeBtn:'Main menu',pauseBtn:'Pause',againBtn:'Play again',
+ 'en':{name:'English',sub:'Press Space or tap to start',info:'First to 5 wins | You\'re on the left, CPU on the right',pause:'Paused',resume:'Press Space or tap to resume',mined:'BLOCK MINED!',mining:'Mining block',found:'Valid hash found!',reward:'Block reward +3.125 ₿',orphan:'Orphaned block — the CPU\'s chain won',againK:'Space / Enter: play again',win:'You win!',lose:'CPU wins',again:'Press Space or tap to play again',you:'YOU',cpu:'CPU',snd:'Sound',on:'On',off:'Off',lang:'Language',infoR:'First to 5 wins | You\'re at the bottom, CPU at the top',helpMR:'Drag left / right to move your paddle | Tap to start | First to 5 wins',diff:'Difficulty',easy:'Easy',normal:'Normal',hard:'Hard',resumeBtn:'Resume',homeBtn:'Main menu',pauseBtn:'Pause',againBtn:'Play again',
   helpPlayR:'Drag left / right to move your paddle | First to 5 wins',helpPlay:'Drag up / down to move the left paddle | First to 5 wins',helpPaused:'Paused — tap Continue to resume',helpD:'W / S, ↑ / ↓ or mouse: move left paddle | Space: start / pause | M: sound | First to 5 wins',helpM:'Drag up / down to move the left paddle | Tap to start | First to 5 wins'},
- 'zh-Hant':{name:'繁體中文',sub:'按 Space 或撳一下開始',info:'先到 5 分贏 ｜ 左邊係你，右邊係電腦',pause:'暫停',resume:'按 Space 或撳一下繼續',win:'你贏咗！',lose:'電腦贏咗',again:'按 Space 或撳一下再玩',you:'你',cpu:'電腦',snd:'聲音',on:'開',off:'關',lang:'語言',infoR:'先到 5 分贏 ｜ 下面係你，上面係電腦',helpMR:'手指左右拉控制你塊板 ｜ 撳一下開始 ｜ 先到 5 分贏',diff:'難度',easy:'低',normal:'中',hard:'高',resumeBtn:'繼續',homeBtn:'返主畫面',pauseBtn:'暫停',againBtn:'再玩',
+ 'zh-Hant':{name:'繁體中文',sub:'按 Space 或撳一下開始',info:'先到 5 分贏 ｜ 左邊係你，右邊係電腦',pause:'暫停',resume:'按 Space 或撳一下繼續',mined:'挖礦成功！',mining:'挖礦中',found:'搵到有效雜湊！',reward:'區塊獎勵 +3.125 ₿',orphan:'孤塊 — 電腦條鏈贏咗',againK:'按 Space 或 Enter 再玩一次',win:'你贏咗！',lose:'電腦贏咗',again:'按 Space 或撳一下再玩',you:'你',cpu:'電腦',snd:'聲音',on:'開',off:'關',lang:'語言',infoR:'先到 5 分贏 ｜ 下面係你，上面係電腦',helpMR:'手指左右拉控制你塊板 ｜ 撳一下開始 ｜ 先到 5 分贏',diff:'難度',easy:'低',normal:'中',hard:'高',resumeBtn:'繼續',homeBtn:'返主畫面',pauseBtn:'暫停',againBtn:'再玩',
   helpPlayR:'手指左右拉控制你塊板 ｜ 先到 5 分贏',helpPlay:'手指上下拉控制左邊 ｜ 先到 5 分贏',helpPaused:'暫停中 — 撳「繼續」繼續玩',helpD:'W / S 或 ↑ / ↓ 或滑鼠控制左邊 ｜ Space 開始／暫停 ｜ M 開關聲音 ｜ 先到 5 分贏',helpM:'手指上下拉控制左邊 ｜ 撳一下開始 ｜ 先到 5 分贏'},
- 'zh-Hans':{name:'简体中文',sub:'按空格键或点击开始',info:'先得 5 分者胜 ｜ 左边是你，右边是电脑',pause:'暂停',resume:'按空格键或点击继续',win:'你赢了！',lose:'电脑赢了',again:'按空格键或点击再玩一局',you:'你',cpu:'电脑',snd:'声音',on:'开',off:'关',lang:'语言',infoR:'先得 5 分者胜 ｜ 下方是你，上方是电脑',helpMR:'手指左右滑动控制你的球拍 ｜ 点击开始 ｜ 先得 5 分者胜',diff:'难度',easy:'低',normal:'中',hard:'高',resumeBtn:'继续',homeBtn:'回主画面',pauseBtn:'暂停',againBtn:'再玩',
+ 'zh-Hans':{name:'简体中文',sub:'按空格键或点击开始',info:'先得 5 分者胜 ｜ 左边是你，右边是电脑',pause:'暂停',resume:'按空格键或点击继续',mined:'挖矿成功！',mining:'挖矿中',found:'找到有效哈希！',reward:'区块奖励 +3.125 ₿',orphan:'孤块 — 电脑的链赢了',againK:'按空格键或回车键再玩一局',win:'你赢了！',lose:'电脑赢了',again:'按空格键或点击再玩一局',you:'你',cpu:'电脑',snd:'声音',on:'开',off:'关',lang:'语言',infoR:'先得 5 分者胜 ｜ 下方是你，上方是电脑',helpMR:'手指左右滑动控制你的球拍 ｜ 点击开始 ｜ 先得 5 分者胜',diff:'难度',easy:'低',normal:'中',hard:'高',resumeBtn:'继续',homeBtn:'回主画面',pauseBtn:'暂停',againBtn:'再玩',
   helpPlayR:'手指左右滑动控制你的球拍 ｜ 先得 5 分者胜',helpPlay:'手指上下滑动控制左边球拍 ｜ 先得 5 分者胜',helpPaused:'暂停中 — 点「继续」继续玩',helpD:'W / S、↑ / ↓ 或鼠标控制左边球拍 ｜ 空格键 开始／暂停 ｜ M 开关声音 ｜ 先得 5 分者胜',helpM:'手指上下滑动控制左边球拍 ｜ 点击开始 ｜ 先得 5 分者胜'},
- 'ko':{name:'한국어',sub:'스페이스 키를 누르거나 탭해서 시작',info:'먼저 5점을 내면 승리 | 왼쪽은 나, 오른쪽은 컴퓨터',pause:'일시정지',resume:'스페이스 키 또는 탭으로 계속',win:'이겼어요!',lose:'컴퓨터가 이겼어요',again:'스페이스 키 또는 탭으로 다시 하기',you:'나',cpu:'컴퓨터',snd:'소리',on:'켬',off:'끔',lang:'언어',infoR:'먼저 5점을 내면 승리 | 아래는 나, 위는 컴퓨터',helpMR:'좌우로 드래그해 내 패들 조작 | 탭해서 시작 | 먼저 5점 내면 승리',diff:'난이도',easy:'쉬움',normal:'보통',hard:'어려움',resumeBtn:'계속',homeBtn:'메인으로',pauseBtn:'일시정지',againBtn:'다시 하기',
+ 'ko':{name:'한국어',sub:'스페이스 키를 누르거나 탭해서 시작',info:'먼저 5점을 내면 승리 | 왼쪽은 나, 오른쪽은 컴퓨터',pause:'일시정지',resume:'스페이스 키 또는 탭으로 계속',mined:'블록 채굴 성공!',mining:'블록 채굴 중',found:'유효한 해시 발견!',reward:'블록 보상 +3.125 ₿',orphan:'고아 블록 — 컴퓨터 체인이 이겼어요',againK:'스페이스 / 엔터: 다시 하기',win:'이겼어요!',lose:'컴퓨터가 이겼어요',again:'스페이스 키 또는 탭으로 다시 하기',you:'나',cpu:'컴퓨터',snd:'소리',on:'켬',off:'끔',lang:'언어',infoR:'먼저 5점을 내면 승리 | 아래는 나, 위는 컴퓨터',helpMR:'좌우로 드래그해 내 패들 조작 | 탭해서 시작 | 먼저 5점 내면 승리',diff:'난이도',easy:'쉬움',normal:'보통',hard:'어려움',resumeBtn:'계속',homeBtn:'메인으로',pauseBtn:'일시정지',againBtn:'다시 하기',
   helpPlayR:'좌우로 드래그해 내 패들 조작 | 먼저 5점 내면 승리',helpPlay:'위아래로 드래그해 왼쪽 패들 조작 | 먼저 5점 내면 승리',helpPaused:'일시정지 — 「계속」을 눌러 이어하기',helpD:'W / S, ↑ / ↓ 또는 마우스로 왼쪽 패들 조작 | Space 시작/일시정지 | M 소리 | 먼저 5점 내면 승리',helpM:'위아래로 드래그해 왼쪽 패들 조작 | 탭해서 시작 | 먼저 5점 내면 승리'},
- 'ja':{name:'日本語',sub:'スペースキーかタップでスタート',info:'5点先取で勝ち ｜ 左があなた、右がCPU',pause:'一時停止',resume:'スペースキーかタップで再開',win:'あなたの勝ち！',lose:'CPUの勝ち',again:'スペースキーかタップでもう一度',you:'あなた',cpu:'CPU',snd:'サウンド',on:'オン',off:'オフ',lang:'言語',infoR:'5点先取で勝ち ｜ 下があなた、上がCPU',helpMR:'左右にドラッグで自分のパドルを操作 ｜ タップでスタート ｜ 5点先取で勝ち',diff:'難易度',easy:'かんたん',normal:'ふつう',hard:'むずかしい',resumeBtn:'続ける',homeBtn:'タイトルへ',pauseBtn:'一時停止',againBtn:'もう一度',
+ 'ja':{name:'日本語',sub:'スペースキーかタップでスタート',info:'5点先取で勝ち ｜ 左があなた、右がCPU',pause:'一時停止',resume:'スペースキーかタップで再開',mined:'ブロック採掘成功！',mining:'ブロック採掘中',found:'有効なハッシュを発見！',reward:'ブロック報酬 +3.125 ₿',orphan:'孤立ブロック — CPUのチェーンの勝ち',againK:'Space / Enter でもう一度',win:'あなたの勝ち！',lose:'CPUの勝ち',again:'スペースキーかタップでもう一度',you:'あなた',cpu:'CPU',snd:'サウンド',on:'オン',off:'オフ',lang:'言語',infoR:'5点先取で勝ち ｜ 下があなた、上がCPU',helpMR:'左右にドラッグで自分のパドルを操作 ｜ タップでスタート ｜ 5点先取で勝ち',diff:'難易度',easy:'かんたん',normal:'ふつう',hard:'むずかしい',resumeBtn:'続ける',homeBtn:'タイトルへ',pauseBtn:'一時停止',againBtn:'もう一度',
   helpPlayR:'左右にドラッグで自分のパドルを操作 ｜ 5点先取で勝ち',helpPlay:'上下にドラッグで左のパドルを操作 ｜ 5点先取で勝ち',helpPaused:'一時停止中 — 「続ける」で再開',helpD:'W / S・↑ / ↓・マウスで左のパドルを操作 ｜ スペース：開始／一時停止 ｜ M：サウンド ｜ 5点先取で勝ち',helpM:'上下にドラッグで左のパドルを操作 ｜ タップでスタート ｜ 5点先取で勝ち'},
- 'th':{name:'ไทย',sub:'กด Space หรือแตะเพื่อเริ่ม',info:'ใครได้ 5 แต้มก่อนชนะ | ซ้ายคือคุณ ขวาคือคอมพิวเตอร์',pause:'หยุดชั่วคราว',resume:'กด Space หรือแตะเพื่อเล่นต่อ',win:'คุณชนะ!',lose:'คอมพิวเตอร์ชนะ',again:'กด Space หรือแตะเพื่อเล่นอีกครั้ง',you:'คุณ',cpu:'คอม',snd:'เสียง',on:'เปิด',off:'ปิด',lang:'ภาษา',infoR:'ใครได้ 5 แต้มก่อนชนะ | ล่างคือคุณ บนคือคอมพิวเตอร์',helpMR:'ลากซ้ายขวาเพื่อควบคุมไม้ของคุณ | แตะเพื่อเริ่ม | ได้ 5 แต้มก่อนชนะ',diff:'ระดับ',easy:'ง่าย',normal:'ปานกลาง',hard:'ยาก',resumeBtn:'เล่นต่อ',homeBtn:'หน้าหลัก',pauseBtn:'หยุด',againBtn:'เล่นอีก',
+ 'th':{name:'ไทย',sub:'กด Space หรือแตะเพื่อเริ่ม',info:'ใครได้ 5 แต้มก่อนชนะ | ซ้ายคือคุณ ขวาคือคอมพิวเตอร์',pause:'หยุดชั่วคราว',resume:'กด Space หรือแตะเพื่อเล่นต่อ',mined:'ขุดบล็อกสำเร็จ!',mining:'กำลังขุดบล็อก',found:'พบแฮชที่ถูกต้อง!',reward:'รางวัลบล็อก +3.125 ₿',orphan:'บล็อกกำพร้า — เชนของคอมพิวเตอร์ชนะ',againK:'กด Space / Enter เพื่อเล่นอีกครั้ง',win:'คุณชนะ!',lose:'คอมพิวเตอร์ชนะ',again:'กด Space หรือแตะเพื่อเล่นอีกครั้ง',you:'คุณ',cpu:'คอม',snd:'เสียง',on:'เปิด',off:'ปิด',lang:'ภาษา',infoR:'ใครได้ 5 แต้มก่อนชนะ | ล่างคือคุณ บนคือคอมพิวเตอร์',helpMR:'ลากซ้ายขวาเพื่อควบคุมไม้ของคุณ | แตะเพื่อเริ่ม | ได้ 5 แต้มก่อนชนะ',diff:'ระดับ',easy:'ง่าย',normal:'ปานกลาง',hard:'ยาก',resumeBtn:'เล่นต่อ',homeBtn:'หน้าหลัก',pauseBtn:'หยุด',againBtn:'เล่นอีก',
   helpPlayR:'ลากซ้ายขวาเพื่อควบคุมไม้ของคุณ | ได้ 5 แต้มก่อนชนะ',helpPlay:'ลากขึ้นลงเพื่อควบคุมไม้ฝั่งซ้าย | ได้ 5 แต้มก่อนชนะ',helpPaused:'หยุดชั่วคราว — แตะ「เล่นต่อ」เพื่อเล่นต่อ',helpD:'W / S, ↑ / ↓ หรือเมาส์ ควบคุมไม้ฝั่งซ้าย | Space เริ่ม/หยุด | M เปิด/ปิดเสียง | ได้ 5 แต้มก่อนชนะ',helpM:'ลากขึ้นลงเพื่อควบคุมไม้ฝั่งซ้าย | แตะเพื่อเริ่ม | ได้ 5 แต้มก่อนชนะ'},
- 'fr':{name:'Français',sub:'Appuyez sur Espace ou touchez pour jouer',info:'Le premier à 5 gagne | Vous à gauche, l\'ordi à droite',pause:'Pause',resume:'Espace ou touchez pour reprendre',win:'Vous avez gagné'+NB+'!',lose:'L\'ordi a gagné',again:'Espace ou touchez pour rejouer',you:'VOUS',cpu:'ORDI',snd:'Son',on:'activé',off:'coupé',lang:'Langue',infoR:'Le premier à 5 gagne | Vous en bas, l\'ordi en haut',helpMR:'Glissez à gauche / droite pour bouger votre raquette | Touchez pour jouer | Le premier à 5 gagne',diff:'Difficulté',easy:'Facile',normal:'Normal',hard:'Difficile',resumeBtn:'Reprendre',homeBtn:'Menu principal',pauseBtn:'Pause',againBtn:'Rejouer',
+ 'fr':{name:'Français',sub:'Appuyez sur Espace ou touchez pour jouer',info:'Le premier à 5 gagne | Vous à gauche, l\'ordi à droite',pause:'Pause',resume:'Espace ou touchez pour reprendre',mined:'BLOC MINÉ\u00a0!',mining:'Minage du bloc',found:'Hash valide trouvé\u00a0!',reward:'Récompense de bloc +3,125\u00a0₿',orphan:'Bloc orphelin — la chaîne de l\'ordi gagne',againK:'Espace / Entrée\u00a0: rejouer',win:'Vous avez gagné'+NB+'!',lose:'L\'ordi a gagné',again:'Espace ou touchez pour rejouer',you:'VOUS',cpu:'ORDI',snd:'Son',on:'activé',off:'coupé',lang:'Langue',infoR:'Le premier à 5 gagne | Vous en bas, l\'ordi en haut',helpMR:'Glissez à gauche / droite pour bouger votre raquette | Touchez pour jouer | Le premier à 5 gagne',diff:'Difficulté',easy:'Facile',normal:'Normal',hard:'Difficile',resumeBtn:'Reprendre',homeBtn:'Menu principal',pauseBtn:'Pause',againBtn:'Rejouer',
   helpPlayR:'Glissez à gauche / droite pour bouger votre raquette | Le premier à 5 gagne',helpPlay:'Glissez pour bouger la raquette gauche | Le premier à 5 gagne',helpPaused:'Pause — touchez Reprendre',helpD:'W / S, ↑ / ↓ ou souris'+NB+': raquette gauche | Espace'+NB+': jouer / pause | M'+NB+': son | Le premier à 5 gagne',helpM:'Glissez pour bouger la raquette gauche | Touchez pour jouer | Le premier à 5 gagne'},
- 'es':{name:'Español',sub:'Pulsa Espacio o toca para empezar',info:'Gana el primero en llegar a 5 | Tú a la izquierda, la CPU a la derecha',pause:'Pausa',resume:'Pulsa Espacio o toca para seguir',win:'¡Has ganado!',lose:'Gana la CPU',again:'Pulsa Espacio o toca para volver a jugar',you:'TÚ',cpu:'CPU',snd:'Sonido',on:'sí',off:'no',lang:'Idioma',infoR:'Gana el primero en llegar a 5 | Tú abajo, la CPU arriba',helpMR:'Desliza a izquierda / derecha para mover tu pala | Toca para empezar | Gana quien llegue a 5',diff:'Dificultad',easy:'Fácil',normal:'Normal',hard:'Difícil',resumeBtn:'Continuar',homeBtn:'Menú principal',pauseBtn:'Pausa',againBtn:'Jugar de nuevo',
+ 'es':{name:'Español',sub:'Pulsa Espacio o toca para empezar',info:'Gana el primero en llegar a 5 | Tú a la izquierda, la CPU a la derecha',pause:'Pausa',resume:'Pulsa Espacio o toca para seguir',mined:'¡BLOQUE MINADO!',mining:'Minando bloque',found:'¡Hash válido encontrado!',reward:'Recompensa de bloque +3,125 ₿',orphan:'Bloque huérfano — gana la cadena de la CPU',againK:'Espacio / Intro: jugar otra vez',win:'¡Has ganado!',lose:'Gana la CPU',again:'Pulsa Espacio o toca para volver a jugar',you:'TÚ',cpu:'CPU',snd:'Sonido',on:'sí',off:'no',lang:'Idioma',infoR:'Gana el primero en llegar a 5 | Tú abajo, la CPU arriba',helpMR:'Desliza a izquierda / derecha para mover tu pala | Toca para empezar | Gana quien llegue a 5',diff:'Dificultad',easy:'Fácil',normal:'Normal',hard:'Difícil',resumeBtn:'Continuar',homeBtn:'Menú principal',pauseBtn:'Pausa',againBtn:'Jugar de nuevo',
   helpPlayR:'Desliza a izquierda / derecha para mover tu pala | Gana quien llegue a 5',helpPlay:'Desliza arriba / abajo para mover la pala izquierda | Gana quien llegue a 5',helpPaused:'Pausa — toca Continuar',helpD:'W / S, ↑ / ↓ o ratón: pala izquierda | Espacio: empezar / pausa | M: sonido | Gana el primero en llegar a 5',helpM:'Desliza arriba / abajo para mover la pala izquierda | Toca para empezar | Gana quien llegue a 5'},
- 'it':{name:'Italiano',sub:'Premi Spazio o tocca per iniziare',info:'Vince chi arriva prima a 5 | Tu a sinistra, il computer a destra',pause:'Pausa',resume:'Premi Spazio o tocca per riprendere',win:'Hai vinto!',lose:'Ha vinto il computer',again:'Premi Spazio o tocca per rigiocare',you:'TU',cpu:'CPU',snd:'Audio',on:'sì',off:'no',lang:'Lingua',infoR:'Vince chi arriva prima a 5 | Tu in basso, il computer in alto',helpMR:'Trascina a sinistra / destra per muovere la racchetta | Tocca per iniziare | Vince chi arriva a 5',diff:'Difficoltà',easy:'Facile',normal:'Normale',hard:'Difficile',resumeBtn:'Continua',homeBtn:'Menu principale',pauseBtn:'Pausa',againBtn:'Rigioca',
+ 'it':{name:'Italiano',sub:'Premi Spazio o tocca per iniziare',info:'Vince chi arriva prima a 5 | Tu a sinistra, il computer a destra',pause:'Pausa',resume:'Premi Spazio o tocca per riprendere',mined:'BLOCCO MINATO!',mining:'Mining del blocco',found:'Hash valido trovato!',reward:'Ricompensa del blocco +3,125 ₿',orphan:'Blocco orfano — vince la catena del computer',againK:'Spazio / Invio: gioca ancora',win:'Hai vinto!',lose:'Ha vinto il computer',again:'Premi Spazio o tocca per rigiocare',you:'TU',cpu:'CPU',snd:'Audio',on:'sì',off:'no',lang:'Lingua',infoR:'Vince chi arriva prima a 5 | Tu in basso, il computer in alto',helpMR:'Trascina a sinistra / destra per muovere la racchetta | Tocca per iniziare | Vince chi arriva a 5',diff:'Difficoltà',easy:'Facile',normal:'Normale',hard:'Difficile',resumeBtn:'Continua',homeBtn:'Menu principale',pauseBtn:'Pausa',againBtn:'Rigioca',
   helpPlayR:'Trascina a sinistra / destra per muovere la racchetta | Vince chi arriva a 5',helpPlay:'Trascina su / giù per muovere la racchetta sinistra | Vince chi arriva a 5',helpPaused:'Pausa — tocca Continua',helpD:'W / S, ↑ / ↓ o mouse: racchetta sinistra | Spazio: avvia / pausa | M: audio | Vince chi arriva prima a 5',helpM:'Trascina su / giù per muovere la racchetta sinistra | Tocca per iniziare | Vince chi arriva a 5'},
- 'de':{name:'Deutsch',sub:'Leertaste drücken oder tippen zum Starten',info:'Wer zuerst 5 Punkte hat, gewinnt | Du links, Computer rechts',pause:'Pause',resume:'Leertaste oder tippen zum Fortsetzen',win:'Du hast gewonnen!',lose:'Der Computer gewinnt',again:'Leertaste oder tippen für eine neue Runde',you:'DU',cpu:'CPU',snd:'Ton',on:'an',off:'aus',lang:'Sprache',infoR:'Wer zuerst 5 Punkte hat, gewinnt | Du unten, Computer oben',helpMR:'Nach links / rechts wischen: dein Schläger | Tippen zum Starten | Wer zuerst 5 hat, gewinnt',diff:'Schwierigkeit',easy:'Leicht',normal:'Mittel',hard:'Schwer',resumeBtn:'Weiter',homeBtn:'Hauptmenü',pauseBtn:'Pause',againBtn:'Nochmal',
+ 'de':{name:'Deutsch',sub:'Leertaste drücken oder tippen zum Starten',info:'Wer zuerst 5 Punkte hat, gewinnt | Du links, Computer rechts',pause:'Pause',resume:'Leertaste oder tippen zum Fortsetzen',mined:'BLOCK GEMINT!',mining:'Block wird gemint',found:'Gültiger Hash gefunden!',reward:'Blockbelohnung +3,125 ₿',orphan:'Verwaister Block — die Kette des Computers gewinnt',againK:'Leertaste / Enter: neue Runde',win:'Du hast gewonnen!',lose:'Der Computer gewinnt',again:'Leertaste oder tippen für eine neue Runde',you:'DU',cpu:'CPU',snd:'Ton',on:'an',off:'aus',lang:'Sprache',infoR:'Wer zuerst 5 Punkte hat, gewinnt | Du unten, Computer oben',helpMR:'Nach links / rechts wischen: dein Schläger | Tippen zum Starten | Wer zuerst 5 hat, gewinnt',diff:'Schwierigkeit',easy:'Leicht',normal:'Mittel',hard:'Schwer',resumeBtn:'Weiter',homeBtn:'Hauptmenü',pauseBtn:'Pause',againBtn:'Nochmal',
   helpPlayR:'Nach links / rechts wischen: dein Schläger | Wer zuerst 5 hat, gewinnt',helpPlay:'Nach oben / unten wischen: linker Schläger | Wer zuerst 5 hat, gewinnt',helpPaused:'Pause — tippe auf Weiter',helpD:'W / S, ↑ / ↓ oder Maus: linker Schläger | Leertaste: Start / Pause | M: Ton | Wer zuerst 5 hat, gewinnt',helpM:'Nach oben / unten wischen: linker Schläger | Tippen zum Starten | Wer zuerst 5 hat, gewinnt'},
- 'ru':{name:'Русский',sub:'Нажмите пробел или коснитесь, чтобы начать',info:'Игра до 5 очков | Вы слева, компьютер справа',pause:'Пауза',resume:'Пробел или касание — продолжить',win:'Вы победили!',lose:'Победил компьютер',again:'Пробел или касание — сыграть ещё',you:'ВЫ',cpu:'КОМП',snd:'Звук',on:'вкл',off:'выкл',lang:'Язык',infoR:'Игра до 5 очков | Вы снизу, компьютер сверху',helpMR:'Водите пальцем влево-вправо — ваша ракетка | Коснитесь, чтобы начать | Игра до 5 очков',diff:'Сложность',easy:'Лёгкий',normal:'Средний',hard:'Сложный',resumeBtn:'Продолжить',homeBtn:'В меню',pauseBtn:'Пауза',againBtn:'Ещё раз',
+ 'ru':{name:'Русский',sub:'Нажмите пробел или коснитесь, чтобы начать',info:'Игра до 5 очков | Вы слева, компьютер справа',pause:'Пауза',resume:'Пробел или касание — продолжить',mined:'БЛОК ДОБЫТ!',mining:'Майнинг блока',found:'Найден верный хеш!',reward:'Награда за блок +3,125 ₿',orphan:'Орфан-блок — цепочка компьютера победила',againK:'Пробел / Enter — сыграть ещё',win:'Вы победили!',lose:'Победил компьютер',again:'Пробел или касание — сыграть ещё',you:'ВЫ',cpu:'КОМП',snd:'Звук',on:'вкл',off:'выкл',lang:'Язык',infoR:'Игра до 5 очков | Вы снизу, компьютер сверху',helpMR:'Водите пальцем влево-вправо — ваша ракетка | Коснитесь, чтобы начать | Игра до 5 очков',diff:'Сложность',easy:'Лёгкий',normal:'Средний',hard:'Сложный',resumeBtn:'Продолжить',homeBtn:'В меню',pauseBtn:'Пауза',againBtn:'Ещё раз',
   helpPlayR:'Водите пальцем влево-вправо — ваша ракетка | Игра до 5 очков',helpPlay:'Водите пальцем вверх-вниз — левая ракетка | Игра до 5 очков',helpPaused:'Пауза — нажмите «Продолжить»',helpD:'W / S, ↑ / ↓ или мышь — левая ракетка | Пробел — старт / пауза | M — звук | Игра до 5 очков',helpM:'Водите пальцем вверх-вниз — левая ракетка | Коснитесь, чтобы начать | Игра до 5 очков'}
 };
 const LANGS=['en','zh-Hant','zh-Hans','ko','ja','th','fr','es','it','de','ru'];
@@ -357,7 +367,7 @@ function helpText(){
   const d=helpEl.querySelector('.d'),m=helpEl.querySelector('.m');
   if(state==='play'){d.textContent=T('helpD');m.textContent=T(ROT?'helpPlayR':'helpPlay');}
   else if(state==='paused'){d.textContent=T('helpPaused');m.textContent=T('helpPaused');}
-  else if(state==='over'){d.textContent=T('helpD');m.textContent=T('again');}
+  else if(state==='over'){d.textContent=T('againK');m.textContent='';}
   else{d.textContent=T('helpD');m.textContent=T(ROT?'helpMR':'helpM');}
 }
 function blockHud(el){['pointerdown','touchstart','mousedown','click','touchend'].forEach(ev=>el.addEventListener(ev,e=>{e.stopPropagation();},{passive:false}));}
@@ -411,17 +421,18 @@ function showMenu(mode){
   if(mode==='paused'){menuTitle.textContent=T('pause');menuSub.textContent=diffText();
     menuActs.appendChild(mkBtn(T('resumeBtn'),'',doResume));
     menuActs.appendChild(mkBtn(T('homeBtn'),'sec',goHome));}
-  else{const win=p1.s>p2.s;menuTitle.textContent=win?T('win'):T('lose');menuTitle.style.color=win?ORANGE:CYAN;
-    menuSub.textContent=p1.s+' : '+p2.s+'  ·  '+diffText();
+  else{const win=p1.s>p2.s,sc=T('you')+' '+p1.s+' : '+p2.s+' '+T('cpu')+'  ·  '+diffText();
+    menuUI.classList.add(win?'win':'lose');menuTitle.textContent=win?T('mined'):T('lose');menuTitle.style.color=win?ORANGE:CYAN;
+    menuSub.textContent=(win?T('reward')+(WFX&&WFX.height?'  ·  #'+WFX.height.toLocaleString('en-US'):''):T('orphan'))+'\n'+sc;
     menuActs.appendChild(mkBtn(T('againBtn'),'',playAgain));
     menuActs.appendChild(mkBtn(T('homeBtn'),'sec',goHome));}
   hudSync();helpText();
 }
-function hideMenu(){menuMode=null;menuUI.classList.remove('on');menuTitle.style.color='';hudSync();helpText();}
+function hideMenu(){menuMode=null;menuUI.classList.remove('on','win','lose');menuTitle.style.color='';hudSync();helpText();}
 function doPause(){if(state!=='play'||DEMO)return;state='paused';showMenu('paused');}
 function doResume(){if(state!=='paused')return;state='play';hideMenu();mouseY=null;}
-function goHome(){p1.s=p2.s=0;state='start';reset(Math.random()<.5?1:-1);trail.length=0;parts.length=bolts.length=rings.length=pops.length=0;hideMenu();mouseY=null;hudSync();helpText();}
-function playAgain(){p1.s=p2.s=0;reset(1);state='play';hideMenu();mouseY=null;}
+function goHome(){clearWin();p1.s=p2.s=0;state='start';reset(Math.random()<.5?1:-1);trail.length=0;parts.length=bolts.length=rings.length=pops.length=0;hideMenu();mouseY=null;hudSync();helpText();}
+function playAgain(){clearWin();p1.s=p2.s=0;reset(1);state='play';hideMenu();mouseY=null;}
 function startGame(){if(state==='start'){reset(Math.random()<.5?1:-1);state='play';hudSync();helpText();}}
 menuUI.addEventListener('click',e=>{e.stopPropagation();}); // tapping the dim overlay does NOT resume
 
@@ -430,6 +441,7 @@ addEventListener('keydown',e=>{
   if(menuOpen){if(e.key==='Escape'){e.preventDefault();closeMenu();}
     else if(e.key.startsWith('Arrow')){e.preventDefault();const bs=[...langGrid.children],i=Math.max(0,bs.indexOf(document.activeElement)),cols=Math.max(1,Math.round(langGrid.clientWidth/(bs[0].offsetWidth+8))),d={ArrowLeft:-1,ArrowRight:1,ArrowUp:-cols,ArrowDown:cols}[e.key];bs[clamp(i+d,0,bs.length-1)].focus();}
     return;}
+  if(state==='over'&&!menuMode&&WFX&&(e.code==='Space'||e.key==='Enter')){e.preventDefault();skipWin();return;}
   if(menuMode){if(e.key==='Escape'&&menuMode==='paused'){e.preventDefault();doResume();return;}
     if(e.code==='Space'||e.key==='Enter'){e.preventDefault();if(menuMode==='paused')doResume();else playAgain();return;}
     return;}
@@ -444,8 +456,8 @@ addEventListener('keyup',e=>keys[e.key]=false);
 function pos(e){const t=e.touches?e.touches[0]:e;return unproj(t.clientX*DPR,t.clientY*DPR);}
 cv.addEventListener('mousemove',e=>{if(state==='play')mouseY=pos(e);});
 cv.addEventListener('touchmove',e=>{e.preventDefault();if(state==='play')mouseY=pos(e);},{passive:false});
-cv.addEventListener('click',()=>{if(state==='start')startGame();});
-cv.addEventListener('touchstart',e=>{e.preventDefault();unlock();if(state==='play')mouseY=pos(e);else if(state==='start')startGame();},{passive:false});
+cv.addEventListener('click',()=>{if(state==='start')startGame();else if(state==='over'&&!menuMode&&WFX)skipWin();});
+cv.addEventListener('touchstart',e=>{e.preventDefault();unlock();if(state==='play')mouseY=pos(e);else if(state==='start')startGame();else if(state==='over'&&!menuMode&&WFX)skipWin();},{passive:false});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'&&!DEMO)doPause();musicSync();});
 
 /* ---------- effects ---------- */
@@ -541,10 +553,134 @@ function step(){
   for(const t of visTraces)if(t.lit>0)t.lit=Math.max(0,t.lit-.025);
   for(let i=0;i<pulses.length;i++){const p=pulses[i];p.d+=p.sp;if(p.d>p.t.len+40)pulses[i]=newPulse(false);}
   for(const d of dust){d.h+=d.vh;d.x+=d.vx;d.ph+=.05;if(d.h>260){d.h=0;d.x=R(-200,W+200);d.y=R(-350,H+200);}}
-  p1.glow*=.92;p2.glow*=.92;shake*=.85;flash*=.86;
+  if(WFX)winStep();
+  p1.glow*=.92;p2.glow*=.92;shake*=.85;flash*=.86;flashW*=.88;
 }
 function wallFx(){for(let i=0;i<8;i++){const a=R(0,TAU),s=R(1,4);addPart({t:0,x:ball.x,y:ball.y<H/2?0:H,h:BALL/2,vx:Math.cos(a)*s,vy:Math.sin(a)*s,vh:R(0,3),life:R(12,22),c:'gold'});}blip(300,220,.05,'triangle',.04);}
-function score(dir){if(p1.s>=WIN||p2.s>=WIN){if(DEMO){p1.s=p2.s=0;}else{state='over';showMenu('over');}}reset(dir);}
+function score(dir){if(p1.s>=WIN||p2.s>=WIN){if(DEMO){p1.s=p2.s=0;}else{state='over';if(p1.s>p2.s){winStart();hudSync();helpText();}else loseStart();}}reset(dir);}
+
+/* ---------- end of game: BLOCK MINED celebration (win) / orphaned block (lose) ---------- */
+const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+let WFX=null,flashW=0;const wbits=[],rain=[],wbolts=[];
+const WCOL=['#ffd27a','#ffb238','#f7931a','#ffffff','#fff1c9','#ff8a3a'];
+const WCAP=RM?110:240,menuBox=menuUI.querySelector('.box');
+const rhex=n=>{let s='';for(let i=0;i<n;i++)s+='0123456789abcdef'[(Math.random()*16)|0];return s;};
+const bin=()=>Math.random()<.5?'0':'1';
+const qz=v=>Math.max(8,Math.round(v/6)*6);
+function wU(){return Math.min(CW,CH*1.4);}
+function clearWin(){WFX=null;flashW=0;wbits.length=rain.length=wbolts.length=0;menuUI.classList.remove('win','lose');}
+function winStart(){clearWin();
+  WFX={mode:'win',t:0,found:false,shown:false,height:968000+((Math.random()*9000)|0),nonce:(Math.random()*2e9)|0,hash:'0000000000000000000'+rhex(45),lines:[],coinA:0,ty:null};
+  for(const tr of visTraces){if(tr.wd===undefined){let m=1e9;for(const q of tr.pts)m=Math.min(m,Math.hypot(q[0]-W/2,q[1]-H/2));tr.wd=m;}tr.wf=false;}
+  for(let i=0;i<7;i++)WFX.lines.push(rhex(64));
+  winSound();}
+function loseStart(){clearWin();WFX={mode:'lose',t:0};showMenu('over');
+  if(sound&&AC){blip(392,330,.18,'triangle',.05);setTimeout(()=>blip(330,196,.42,'triangle',.045),190);}}
+function skipWin(){const F=WFX;if(!F)return;if(F.mode==='win'){if(!F.found){F.found=true;boom();}F.b2=F.b3=true;if(F.t<2.69)F.t=2.69;}}
+function wJit(b){const pts=[[b.x1,b.y1]],br=[];boltPath(b.x1,b.y1,b.x2,b.y2,Math.hypot(b.x2-b.x1,b.y2-b.y1)*.15,7,pts,br);b.paths=[pts].concat(br.slice(0,6));}
+function strike(n,small){const c=pd(W/2,H/2,0);
+  for(let i=0;i<n;i++){const sd=small?0:(Math.random()*4)|0;let x1,y1;
+    if(sd===0){x1=R(0,CW);y1=-20;}else if(sd===1){x1=CW+20;y1=R(0,CH*.75);}else if(sd===2){x1=-20;y1=R(0,CH*.75);}else{x1=R(0,CW);y1=CH+20;}
+    const b={x1,y1,x2:c[0]+R(-28,28)*c[2],y2:c[1]+R(-28,28)*c[2],life:small?12:24,max:small?12:24,w:small?.45:1};wJit(b);wbolts.push(b);}
+  if(wbolts.length>9)wbolts.splice(0,wbolts.length-9);
+  flashW=Math.max(flashW,(small?.1:.45)*(RM?.35:1));shake=Math.max(shake,(small?3:14)*(RM?.25:1));zap(small?.45:1);}
+function boom(){const c=pd(W/2,H/2,0),u=wU(),n=RM?90:200;
+  for(let i=0;i<n;i++){const a=R(0,TAU),s=R(.004,.03)*u*(Math.random()<.2?1.4:1),l=R(60,125);
+    wbits.push({x:c[0]+R(-12,12),y:c[1]+R(-12,12),vx:Math.cos(a)*s,vy:Math.sin(a)*s-u*.004,g:u*.0003,dr:.962,ch:bin(),c:WCOL[(Math.random()*WCOL.length)|0],sz:qz(u*R(.022,.062)),life:l,mx:l});}
+  strike(RM?3:5,false);flashW=RM?.3:1;shake=RM?4:26;flash=1;flashCol='255,210,140';
+  rings.push({x:W/2,y:H/2,r:10,max:720,life:56,mx:56,col:'gold',w:14},{x:W/2,y:H/2,r:6,max:430,life:36,mx:36,col:'white',w:6});}
+function winStep(){const F=WFX,u=wU();F.t+=1/60;const t=F.t,win=F.mode==='win';
+  if(win){
+    if(t<.8){F.nonce+=40000+((Math.random()*90000)|0);if(steps%2===0){F.lines.unshift(rhex(64));F.lines.length=7;}}
+    if(!F.found&&t>=.8){F.found=true;boom();}
+    if(t>=1.08&&!F.b2){F.b2=true;strike(RM?1:3,false);}
+    if(t>=1.42&&!F.b3){F.b3=true;strike(RM?1:2,false);}
+    if(F.found){const rw=(t-.8)*1400;for(const tr of visTraces)if(!tr.wf&&tr.wd<=rw){tr.wf=true;tr.lit=1;tr.lc='gold';}}
+    if(t>=2.7&&!F.shown){F.shown=true;showMenu('over');}
+    if(t>2.7){if(Math.random()<(RM?.004:.011))strike(1,true);
+      for(const tr of visTraces){const v=.42*Math.sin(tsec*2.2-tr.wd/90)-.08;if(v>.04&&tr.lit<v){tr.lit=v;tr.lc='gold';}}}
+    if(t>.9&&wbits.length<WCAP&&Math.random()<(t>2.7?.2:.9)){const l=R(130,230);
+      wbits.push({x:R(0,CW),y:CH+10,vx:R(-.3,.3),vy:-R(.5,1.5)*u/900,g:0,dr:1,ch:bin(),c:WCOL[(Math.random()*WCOL.length)|0],sz:qz(u*R(.014,.03)),life:l,mx:l,fl:1});}
+    // coin target: rises above the centre, then sits just above the result panel
+    let ty=CH*.5-u*.24;if(F.shown&&menuBox.offsetHeight)ty=Math.min(ty,(menuBox.offsetTop+menuUI.getBoundingClientRect().top)*DPR-u*.105);ty=Math.max(ty,u*.08);
+    F.ty=F.ty===null?ty:F.ty+(ty-F.ty)*.12;
+    F.coinA+=(2+26*Math.max(0,1-(t-.8)/1.6))/60;
+  }
+  // matrix rain
+  const fs=Math.max(12*DPR,Math.min(22*DPR,u*.022)),sp=fs*1.6,maxC=Math.min(RM?18:40,Math.floor(CW/sp));
+  const target=win?(t<.8?0:Math.ceil(maxC*(t<2.7?1:.45))):Math.ceil(maxC*.25);F.fs=fs;
+  for(let k=0;k<3&&rain.length<target;k++)rain.push({x:(((Math.random()*maxC)|0)+.5)*sp+R(-3,3),y:R(-CH*.6,win&&t<1.5?CH*.4:0),v:R(.005,.013)*CH*(win?1:.45),ch:Array.from({length:6+((Math.random()*9)|0)},bin)});
+  for(let i=rain.length-1;i>=0;i--){const c=rain[i];c.y+=c.v;if(Math.random()<.15)c.ch[(Math.random()*c.ch.length)|0]=bin();
+    if(c.y-c.ch.length*fs>CH){if(rain.length>target)rain.splice(i,1);else{c.y=R(-fs*4,0);c.x=(((Math.random()*maxC)|0)+.5)*sp;}}}
+  for(let i=wbits.length-1;i>=0;i--){const b=wbits[i];b.x+=b.vx;b.y+=b.vy;b.vy+=b.g;b.vx*=b.dr;b.vy*=b.dr;if(--b.life<=0)wbits.splice(i,1);}
+  for(let i=wbolts.length-1;i>=0;i--){const b=wbolts[i];if(--b.life<=0)wbolts.splice(i,1);else if(b.life%3===0)wJit(b);}
+}
+function drawWin(sx,sy){const F=WFX,t=F.t,u=wU(),cx=CW/2,cy=CH*.5,win=F.mode==='win',mono='"Courier New",Consolas,monospace';
+  ctx.setTransform(1,0,0,1,0,0);
+  // dim the board (heavier while hashing so the text reads)
+  const dim=win?(t<.8?Math.min(.62,t*2):Math.max(.2,.62-(t-.8)*.5)):.3;ctx.fillStyle=`rgba(2,5,15,${dim})`;ctx.fillRect(0,0,CW,CH);
+  ctx.setTransform(1,0,0,1,sx,sy);ctx.textAlign='center';ctx.textBaseline='middle';
+  // binary rain
+  const fs=F.fs||16;ctx.font=`bold ${fs|0}px ${mono}`;
+  const ra=win?(t<2.7?.55:.3):.14,rc=win?'255,190,90':'120,170,200';
+  for(const c of rain){for(let k=0;k<c.ch.length;k++){const y=c.y-k*fs;if(y<-fs||y>CH+fs)continue;
+      ctx.fillStyle=k===0&&win?`rgba(255,246,220,${ra*1.4})`:`rgba(${rc},${ra*(1-k/c.ch.length)})`;ctx.fillText(c.ch[k],c.x,y);}}
+  ctx.globalCompositeOperation='lighter';
+  // lightning (screen space)
+  for(const b of wbolts){const f=b.life/b.max,fl=(b.life%4<2)?1:.6,k0=RM?.6:1;
+    for(let k=0;k<b.paths.length;k++){const P=b.paths[k],w=(k===0?1:.5)*b.w*u/900;ctx.beginPath();P.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));
+      ctx.strokeStyle=`rgba(255,170,60,${.3*f*fl*k0})`;ctx.lineWidth=Math.max(6,26*w);ctx.stroke();
+      ctx.strokeStyle=`rgba(255,215,130,${f*fl*k0})`;ctx.lineWidth=Math.max(2,7*w);ctx.stroke();
+      ctx.strokeStyle=`rgba(255,255,255,${f*fl})`;ctx.lineWidth=Math.max(1,2.6*w);ctx.stroke();}
+    glow(SP.white,b.x2,b.y2,u*.07*b.w,f);glow(SP.gold,b.x2,b.y2,u*.16*b.w,f*.8);ctx.globalAlpha=1;}
+  // 0/1 burst + floating digits
+  wbits.sort((a,b)=>a.sz-b.sz);let lz=-1;for(const b of wbits){const f=Math.min(1,b.life/25)*(b.fl?.55:1);ctx.globalAlpha=f;ctx.fillStyle=b.c;if(b.sz!==lz){lz=b.sz;ctx.font=`900 ${lz}px ${mono}`;}ctx.fillText(b.ch,b.x,b.y);}
+  ctx.globalAlpha=1;
+  if(win){
+    // the coin flies up, spinning, with rays + bloom
+    if(t>=.8&&img.complete&&img.naturalWidth){const p=clamp((t-.8)/.75,0,1),e=1-Math.pow(1-p,3),c=pd(W/2,H/2,0);
+      const x=c[0]+(cx-c[0])*e,y=c[1]+((F.ty??cy)-c[1])*e,cs=u*.15*(.35+.65*e)*(1+.12*Math.sin(t*5));
+      ctx.globalCompositeOperation='lighter';ctx.save();ctx.translate(x,y);ctx.rotate(t*.6);ctx.fillStyle=`rgba(255,190,80,${.1*e})`;
+      for(let i=0;i<14;i++){ctx.rotate(TAU/14);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-cs*.12,-cs*2.6);ctx.lineTo(cs*.12,-cs*2.6);ctx.fill();}ctx.restore();
+      glow(SP.gold,x,y,cs*2.3,.85);glow(SP.white,x,y,cs*1.1,.35+.4*Math.max(0,1-(t-.8)*2));ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+      ctx.save();ctx.translate(x,y);ctx.scale(Math.cos(F.coinA*TAU),1);ctx.drawImage(img,-cs/2,-cs/2,cs,cs);ctx.restore();}
+    // headline (canvas) until the result panel takes over
+    if(t>=1.2&&t<3.05){const hp=clamp((t-1.2)/.28,0,1),sc=1+.5*(1-hp)*(1-hp),A=hp*(t>2.7?Math.max(0,1-(t-2.7)/.3):1),y=cy+u*.07;
+      ctx.globalAlpha=A;ctx.save();ctx.translate(cx,y);ctx.scale(sc,sc);
+      const hf=isCJK()?FONT:'"Arial Black","Segoe UI",Arial,'+FONT,sz=u*.1;ctx.font=`900 ${sz}px ${hf}`;const w=ctx.measureText(T('mined')).width;if(w>CW*.9)ctx.font=`900 ${sz*CW*.9/w}px ${hf}`;
+      const g=ctx.createLinearGradient(0,-sz*.5,0,sz*.5);g.addColorStop(0,'#fff1c9');g.addColorStop(.55,'#ffb238');g.addColorStop(1,'#f7931a');
+      ctx.shadowColor='rgba(247,147,26,.95)';ctx.shadowBlur=u*.04;ctx.lineWidth=u*.006;ctx.strokeStyle='rgba(40,16,0,.7)';ctx.strokeText(T('mined'),0,0);ctx.fillStyle=g;ctx.fillText(T('mined'),0,0);ctx.restore();
+      ctx.fillStyle='#ffe2b0';fitText(T('reward'),cx,y+u*.085,u*.04,700,CW*.9);ctx.fillStyle='rgba(200,215,255,.85)';fitText(T('you')+' '+p1.s+' : '+p2.s+' '+T('cpu'),cx,y+u*.135,u*.032,600,CW*.9);ctx.globalAlpha=1;}
+  }
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.setTransform(1,0,0,1,0,0);ctx.textBaseline='alphabetic';
+}
+function drawWinTop(sx,sy){const F=WFX;if(!F||F.mode!=='win'||F.t>=1.45)return;const t=F.t,u=wU(),cx=CW/2,cy=CH*.5,mono='"Courier New",Consolas,monospace';
+  ctx.setTransform(1,0,0,1,sx,sy);ctx.textAlign='center';ctx.textBaseline='middle';
+    // hash search
+    {const nch=CW/DPR<640?22:44,hs=Math.min(u*.042,CW*.86/(nch*.62)),lh=hs*1.45,A=t<.8?Math.min(1,t*6):Math.max(0,1-(t-.8)/.22);
+      ctx.globalCompositeOperation='source-over';
+      if(A>0){ctx.globalAlpha=A;ctx.fillStyle='#ffd27a';ctx.font=`700 ${hs*1.25|0}px ${FONT}`;ctx.fillText(T('mining')+' #'+F.height.toLocaleString('en-US')+(t<.8?'.'.repeat(1+((t*8)|0)%3):''),cx,cy-lh*5);
+        ctx.font=`${hs|0}px ${mono}`;
+        if(t<.8)F.lines.forEach((l,i)=>{ctx.fillStyle=`rgba(150,190,255,${.25+.55*(1-i/7)})`;ctx.fillText(l.slice(0,nch)+'…',cx,cy-lh*3.4+i*lh);});
+        ctx.fillStyle='#ffe2b0';ctx.font=`700 ${hs*1.1|0}px ${mono}`;ctx.fillText('nonce '+F.nonce.toLocaleString('en-US'),cx,cy+lh*4.2);}
+      if(t>=.8){const fA=Math.max(0,Math.min(1,1-(t-1.15)/.3)),fl=.6+.4*Math.abs(Math.sin(t*22)),hz=hs,txt=F.hash.slice(0,nch)+'…';
+        ctx.globalAlpha=fA;ctx.fillStyle='rgba(2,5,15,.62)';ctx.fillRect(0,cy-lh*3.1,CW,lh*3.5);ctx.globalCompositeOperation='lighter';glow(SP.gold,cx,cy-lh*.6,CW*.4,.35*fl);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=fA;
+        ctx.font=`800 ${hs*1.3|0}px ${FONT}`;ctx.fillStyle='#fff1c9';ctx.fillText(T('found'),cx,cy-lh*2.2);
+        ctx.font=`900 ${hz|0}px ${mono}`;ctx.textAlign='left';const tw=ctx.measureText(txt).width,z=txt.match(/^0+/)[0],x0=cx-tw/2;
+        ctx.fillStyle=`rgba(255,255,255,${fl})`;ctx.fillText(z,x0,cy-lh*.6);ctx.fillStyle='#ffb238';ctx.fillText(txt.slice(z.length),x0+ctx.measureText(z).width,cy-lh*.6);ctx.textAlign='center';}
+      ctx.globalAlpha=1;}
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.setTransform(1,0,0,1,0,0);ctx.textBaseline='alphabetic';}
+function zap(k){if(!sound||!AC)return;const t=AC.currentTime,len=.32*k+.1,b=AC.createBuffer(1,Math.max(1,(AC.sampleRate*len)|0),AC.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++){const f=1-i/d.length;d[i]=(Math.random()<.16?(Math.random()*2-1):(Math.random()*2-1)*.22)*f*f;}
+  const s=AC.createBufferSource(),bp=AC.createBiquadFilter(),g=AC.createGain();s.buffer=b;bp.type='bandpass';bp.frequency.value=2600;bp.Q.value=.8;g.gain.value=.22*k;s.connect(bp);bp.connect(g);g.connect(AC.destination);s.start(t);
+  const o=AC.createOscillator(),og=AC.createGain();o.type='sawtooth';o.frequency.setValueAtTime(1600,t);o.frequency.exponentialRampToValueAtTime(60,t+.3*k+.05);
+  og.gain.setValueAtTime(.05*k,t);og.gain.exponentialRampToValueAtTime(.0001,t+.32*k+.05);o.connect(og);og.connect(AC.destination);o.start(t);o.stop(t+.4*k+.1);}
+function tone(f,t,dur,type,vol){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.012);
+  g.gain.setValueAtTime(vol,t+dur*.55);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur+.05);}
+function winSound(){if(!sound||!AC)return;const t=AC.currentTime+.02;
+  for(let i=0;i<11;i++)tone(900+i*90,t+i*.068,.035,'square',.012); // hashing ticks
+  const f=t+.82;[[72,0],[76,.1],[79,.2],[84,.3]].forEach(([n,d])=>{tone(mf(n),f+d,.16,'square',.035);tone(mf(n+12),f+d,.12,'triangle',.02);});
+  for(const n of [72,76,79,84,88])tone(mf(n),f+.42,1.4,'triangle',.028);tone(mf(48),f+.42,1.4,'sawtooth',.02);tone(mf(60),f+.42,1.4,'square',.01);}
 
 /* ---------- rendering ---------- */
 function line(a,b){ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);}
@@ -710,9 +846,10 @@ function draw(){
     boardText(T('you'),W/2-205,70,0,22,'#ffc1a8',.65,lf,130);boardText(T('cpu'),W/2+95,70,0,22,'#b8f6ff',.65,lf,130);
 }
 }ctx.globalAlpha=1;
-  if(state!=='start')drawBall();
+  if(state!=='start'&&state!=='over')drawBall();
   drawPaddle(p1,-1);drawPaddle(p2,1);
   drawFx();drawDust();drawPops();
+  if(WFX)drawWin(sx,sy);
   OX=OXs;OY=OYs;
   // cheap bloom: downsample, square (multiply) to threshold, add back
   if(bl1){const b1=bl1.getContext('2d'),b2=bl2.getContext('2d'),bw=bl1.width,bh=bl1.height;
@@ -721,6 +858,8 @@ function draw(){
     ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.4;ctx.imageSmoothingEnabled=true;ctx.drawImage(bl2,0,0,CW,CH);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';}
   if(flash>.02){ctx.globalCompositeOperation='lighter';ctx.fillStyle=`rgba(${flashCol},${Math.min(.22,flash*.16)})`;ctx.fillRect(0,0,CW,CH);ctx.globalCompositeOperation='source-over';}
   ctx.drawImage(vg,0,0);
+  if(flashW>.01){ctx.fillStyle=`rgba(255,250,235,${Math.min(RM?.22:.9,flashW*.9)})`;ctx.fillRect(0,0,CW,CH);}
+  if(WFX)drawWinTop(sx,sy);
   overlay();
 }
 let last=performance.now(),acc=0;
@@ -732,6 +871,10 @@ function loop(now){
 // debug: ?demo=1&freeze=N fast-forwards N steps, then freezes a few frames after the next paddle hit (for screenshots)
 {const st=Q.get('state');if(!DEMO&&(st==='paused'||st==='over')){state=st;if(st==='over'){p1.s=+(Q.get('s1')||5);p2.s=+(Q.get('s2')||3);}setTimeout(()=>showMenu(st),0);}}
 if(Q.has('menu')&&!DEMO)setTimeout(openMenu,50);
+// test switch: ?state=win|lose[&t=ms][&s1&s2] plays the end sequence; with t it fast-forwards to t ms and freezes there
+{const st=Q.get('state');if(!DEMO&&(st==='win'||st==='lose')){const w=st==='win';p1.s=+(Q.get('s1')||(w?5:2));p2.s=+(Q.get('s2')||(w?2:5));state='over';reset(1);
+  if(w){winStart();helpText();}else loseStart();
+  if(Q.has('t')){const n=Math.round(+Q.get('t')/1000*60);for(let i=0;i<n;i++)step();frozen=true;}}}
 if(DEMO&&FREEZE){for(let i=0;i<20000&&!frozen;i++){step();if(freezeAt>0&&steps>=freezeAt)frozen=true;}}
 // test switch: ?simtest=N plays N games per level with scripted players and writes stats into <pre id="simout">
 function simRun(games){

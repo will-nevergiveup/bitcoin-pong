@@ -10,6 +10,8 @@ A classic Pong game in a single HTML file, with the ball replaced by the Bitcoin
 - M, the 🔇/🔊 pill on the start screen, or the top-right button: sound on / off (off by default, remembered)
 - With sound on, soft ambient synth music plays on the start screen only; during a game you hear just the sound effects
 - First to 5 points wins
+- Win and you get a "BLOCK MINED!" celebration: a hash search that finds a block, a burst of 0s and 1s, lightning strikes on the chip, binary rain and a block-reward screen (calmer with reduced motion turned on). Lose and the CPU's chain wins: a quiet "orphaned block" screen
+- Test switch: `?state=win&t=1000` or `?state=lose` freezes the end screen at a given time in ms
 
 ## Pause
 During play a ⏸ button sits next to the sound toggle (top-right). Tap it to pause.
