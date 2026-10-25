@@ -7,8 +7,9 @@ A classic Pong game in a single HTML file, with the ball replaced by the Bitcoin
 ## Controls
 - W / S, ↑ / ↓, mouse or touch: move your paddle (on a phone held upright the board turns so you play from the bottom: drag left / right, or use ← / →)
 - Space or click / tap: start / pause
-- M or the top-right button: sound on / off
-- First to 11 points wins
+- M, the 🔇/🔊 pill on the start screen, or the top-right button: sound on / off (off by default, remembered)
+- With sound on, soft ambient synth music plays on the start screen only; during a game you hear just the sound effects
+- First to 5 points wins
 
 ## Pause
 During play a ⏸ button sits next to the sound toggle (top-right). Tap it to pause.
