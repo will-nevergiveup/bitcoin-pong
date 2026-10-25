@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="build" content="pong-v4-difficulty">
+<meta name="build" content="pong-v5-hud">
 <meta name="theme-color" content="#050a18">
 <title>Bitcoin Pong</title>
 <style>
@@ -11,7 +11,23 @@
   html,body{margin:0;height:100%;overflow:hidden;background:#03060f;color:#fff;font-family:var(--ff);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
   canvas{position:fixed;left:0;top:0;width:100vw;height:100vh;display:block;touch-action:none}
   #help{position:fixed;left:0;right:0;bottom:max(8px,env(safe-area-inset-bottom));text-align:center;color:rgba(255,214,150,.55);font-size:12px;pointer-events:none;letter-spacing:.5px;padding:0 8px}
-  #snd{position:fixed;top:max(10px,env(safe-area-inset-top));right:12px;z-index:5;background:rgba(10,20,45,.65);color:#ffcf7a;border:1px solid rgba(247,147,26,.55);border-radius:16px;padding:6px 12px;font-size:13px;font-family:inherit;cursor:pointer}
+  #topL,#topR{position:fixed;top:max(10px,env(safe-area-inset-top));z-index:5;display:none;align-items:center;gap:8px;pointer-events:none}
+  #topL.on,#topR.on{display:flex}
+  #topL{left:max(10px,env(safe-area-inset-left))}
+  #topR{right:max(10px,env(safe-area-inset-right))}
+  .hud{pointer-events:auto;background:rgba(10,20,45,.72);color:#ffcf7a;border:1px solid rgba(247,147,26,.55);border-radius:999px;padding:0 12px;min-height:40px;font:600 13px/1.2 var(--ff);font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;touch-action:manipulation;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  .hud:hover,.hud:focus-visible{border-color:#ffd27a;outline:none;box-shadow:0 0 12px rgba(247,147,26,.45)}
+  #diffTag{cursor:default;pointer-events:none;max-width:min(48vw,220px);overflow:hidden;text-overflow:ellipsis}
+  #pauseBtn{min-width:40px;padding:0 14px;font-size:18px}
+  #menuUI{position:fixed;inset:0;z-index:8;display:none;align-items:center;justify-content:center;background:rgba(2,5,15,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);touch-action:manipulation;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
+  #menuUI.on{display:flex}
+  #menuUI .box{width:min(92vw,380px);box-sizing:border-box;padding:22px 18px 18px;border-radius:18px;background:linear-gradient(160deg,rgba(15,29,68,.98),rgba(6,12,32,.98));border:1px solid rgba(255,178,56,.75);box-shadow:0 0 40px rgba(247,147,26,.35);text-align:center}
+  #menuUI h2{margin:0 0 6px;font:800 26px/1.2 var(--ff);color:#ffe2b0;letter-spacing:1px}
+  #menuUI .sub{margin:0 0 16px;font:500 14px/1.35 var(--ff);color:rgba(200,215,255,.8)}
+  #menuUI .acts{display:flex;flex-direction:column;gap:10px}
+  #menuUI .acts button{font:700 17px/1.2 var(--ff);color:#1a0d00;background:linear-gradient(180deg,#ffd27a,#f7931a);border:1px solid rgba(255,210,120,.9);border-radius:14px;padding:14px 16px;min-height:48px;cursor:pointer;touch-action:manipulation;box-shadow:0 0 16px rgba(247,147,26,.45)}
+  #menuUI .acts button.sec{color:#ffe2b0;background:rgba(12,24,56,.9);border-color:rgba(90,120,200,.55);box-shadow:none}
+  #menuUI .acts button:hover,#menuUI .acts button:focus-visible{outline:none;filter:brightness(1.08)}
   #ctl{position:fixed;left:50%;top:70%;transform:translate(-50%,0);z-index:6;display:none;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 10px;width:max-content;max-width:96vw}
   #ctl.on{display:flex}
   #lang{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(180deg,rgba(18,30,64,.85),rgba(7,13,32,.88));color:#ffe2b0;border:1px solid rgba(255,178,56,.7);border-radius:999px;padding:7px 16px 7px 12px;font:600 14px/1.2 var(--ff);cursor:pointer;box-shadow:0 0 14px rgba(247,147,26,.35),inset 0 0 10px rgba(255,178,56,.12);letter-spacing:.3px;white-space:nowrap;touch-action:manipulation}
@@ -40,7 +56,9 @@
 </head>
 <body>
 <canvas id="c"></canvas>
-<button id="snd" type="button" aria-label="聲音開關">🔇 聲音：關</button>
+<div id="topL"><span id="diffTag" class="hud" aria-live="polite">難度：中</span></div>
+<div id="topR"><button id="pauseBtn" class="hud" type="button" aria-label="Pause">⏸</button><button id="snd" class="hud" type="button" aria-label="聲音開關">🔇 聲音：關</button></div>
+<div id="menuUI"><div class="box" role="dialog" aria-modal="true"><h2 id="menuTitle">暫停</h2><p class="sub" id="menuSub"></p><div class="acts" id="menuActs"></div></div></div>
 <div id="ctl"><button id="lang" type="button" aria-haspopup="listbox" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="#ffb238" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9M12 3C9.4 5.6 8.1 8.6 8.1 12s1.3 6.4 3.9 9"/></svg><span id="langName">繁體中文</span><span class="cv">▼</span></button><div id="diff" role="radiogroup" aria-label="Difficulty"><span class="lb" id="diffLb">難度：</span><button type="button" role="radio" data-d="easy">低</button><button type="button" role="radio" data-d="normal">中</button><button type="button" role="radio" data-d="hard">高</button></div></div>
 <div id="langMenu"><div class="pn" role="dialog" aria-modal="true"><h2 id="langTitle">LANGUAGE</h2><div class="gr" id="langGrid" role="listbox"></div></div></div>
 <div id="help"><span class="d">W / S 或 ↑ / ↓ 或滑鼠控制左邊 ｜ Space 開始／暫停 ｜ M 開關聲音 ｜ 先到 11 分贏</span><span class="m">手指上下拉控制左邊 ｜ 撳一下開始 ｜ 先到 11 分贏</span></div>
@@ -56,28 +74,28 @@ const TAU=Math.PI*2,ORANGE='#ff5a2a',CYAN='#22e6ff',GOLD='#ffb238';
 /* ---------- i18n ---------- */
 const NB='\u00a0';
 const L={
- 'en':{name:'English',sub:'Press Space or tap to start',info:'First to 11 wins | You\'re on the left, CPU on the right',pause:'Paused',resume:'Press Space or tap to resume',win:'You win!',lose:'CPU wins',again:'Press Space or tap to play again',you:'YOU',cpu:'CPU',snd:'Sound',on:'On',off:'Off',lang:'Language',infoR:'First to 11 wins | You\'re at the bottom, CPU at the top',helpMR:'Drag left / right to move your paddle | Tap to start | First to 11 wins',diff:'Difficulty',easy:'Easy',normal:'Normal',hard:'Hard',
-  helpD:'W / S, ↑ / ↓ or mouse: move left paddle | Space: start / pause | M: sound | First to 11 wins',helpM:'Drag up / down to move the left paddle | Tap to start | First to 11 wins'},
- 'zh-Hant':{name:'繁體中文',sub:'按 Space 或撳一下開始',info:'先到 11 分贏 ｜ 左邊係你，右邊係電腦',pause:'暫停',resume:'按 Space 或撳一下繼續',win:'你贏咗！',lose:'電腦贏咗',again:'按 Space 或撳一下再玩',you:'你',cpu:'電腦',snd:'聲音',on:'開',off:'關',lang:'語言',infoR:'先到 11 分贏 ｜ 下面係你，上面係電腦',helpMR:'手指左右拉控制你塊板 ｜ 撳一下開始 ｜ 先到 11 分贏',diff:'難度',easy:'低',normal:'中',hard:'高',
-  helpD:'W / S 或 ↑ / ↓ 或滑鼠控制左邊 ｜ Space 開始／暫停 ｜ M 開關聲音 ｜ 先到 11 分贏',helpM:'手指上下拉控制左邊 ｜ 撳一下開始 ｜ 先到 11 分贏'},
- 'zh-Hans':{name:'简体中文',sub:'按空格键或点击开始',info:'先得 11 分者胜 ｜ 左边是你，右边是电脑',pause:'暂停',resume:'按空格键或点击继续',win:'你赢了！',lose:'电脑赢了',again:'按空格键或点击再玩一局',you:'你',cpu:'电脑',snd:'声音',on:'开',off:'关',lang:'语言',infoR:'先得 11 分者胜 ｜ 下方是你，上方是电脑',helpMR:'手指左右滑动控制你的球拍 ｜ 点击开始 ｜ 先得 11 分者胜',diff:'难度',easy:'低',normal:'中',hard:'高',
-  helpD:'W / S、↑ / ↓ 或鼠标控制左边球拍 ｜ 空格键 开始／暂停 ｜ M 开关声音 ｜ 先得 11 分者胜',helpM:'手指上下滑动控制左边球拍 ｜ 点击开始 ｜ 先得 11 分者胜'},
- 'ko':{name:'한국어',sub:'스페이스 키를 누르거나 탭해서 시작',info:'먼저 11점을 내면 승리 | 왼쪽은 나, 오른쪽은 컴퓨터',pause:'일시정지',resume:'스페이스 키 또는 탭으로 계속',win:'이겼어요!',lose:'컴퓨터가 이겼어요',again:'스페이스 키 또는 탭으로 다시 하기',you:'나',cpu:'컴퓨터',snd:'소리',on:'켬',off:'끔',lang:'언어',infoR:'먼저 11점을 내면 승리 | 아래는 나, 위는 컴퓨터',helpMR:'좌우로 드래그해 내 패들 조작 | 탭해서 시작 | 먼저 11점 내면 승리',diff:'난이도',easy:'쉬움',normal:'보통',hard:'어려움',
-  helpD:'W / S, ↑ / ↓ 또는 마우스로 왼쪽 패들 조작 | Space 시작/일시정지 | M 소리 | 먼저 11점 내면 승리',helpM:'위아래로 드래그해 왼쪽 패들 조작 | 탭해서 시작 | 먼저 11점 내면 승리'},
- 'ja':{name:'日本語',sub:'スペースキーかタップでスタート',info:'11点先取で勝ち ｜ 左があなた、右がCPU',pause:'一時停止',resume:'スペースキーかタップで再開',win:'あなたの勝ち！',lose:'CPUの勝ち',again:'スペースキーかタップでもう一度',you:'あなた',cpu:'CPU',snd:'サウンド',on:'オン',off:'オフ',lang:'言語',infoR:'11点先取で勝ち ｜ 下があなた、上がCPU',helpMR:'左右にドラッグで自分のパドルを操作 ｜ タップでスタート ｜ 11点先取で勝ち',diff:'難易度',easy:'かんたん',normal:'ふつう',hard:'むずかしい',
-  helpD:'W / S・↑ / ↓・マウスで左のパドルを操作 ｜ スペース：開始／一時停止 ｜ M：サウンド ｜ 11点先取で勝ち',helpM:'上下にドラッグで左のパドルを操作 ｜ タップでスタート ｜ 11点先取で勝ち'},
- 'th':{name:'ไทย',sub:'กด Space หรือแตะเพื่อเริ่ม',info:'ใครได้ 11 แต้มก่อนชนะ | ซ้ายคือคุณ ขวาคือคอมพิวเตอร์',pause:'หยุดชั่วคราว',resume:'กด Space หรือแตะเพื่อเล่นต่อ',win:'คุณชนะ!',lose:'คอมพิวเตอร์ชนะ',again:'กด Space หรือแตะเพื่อเล่นอีกครั้ง',you:'คุณ',cpu:'คอม',snd:'เสียง',on:'เปิด',off:'ปิด',lang:'ภาษา',infoR:'ใครได้ 11 แต้มก่อนชนะ | ล่างคือคุณ บนคือคอมพิวเตอร์',helpMR:'ลากซ้ายขวาเพื่อควบคุมไม้ของคุณ | แตะเพื่อเริ่ม | ได้ 11 แต้มก่อนชนะ',diff:'ระดับ',easy:'ง่าย',normal:'ปานกลาง',hard:'ยาก',
-  helpD:'W / S, ↑ / ↓ หรือเมาส์ ควบคุมไม้ฝั่งซ้าย | Space เริ่ม/หยุด | M เปิด/ปิดเสียง | ได้ 11 แต้มก่อนชนะ',helpM:'ลากขึ้นลงเพื่อควบคุมไม้ฝั่งซ้าย | แตะเพื่อเริ่ม | ได้ 11 แต้มก่อนชนะ'},
- 'fr':{name:'Français',sub:'Appuyez sur Espace ou touchez pour jouer',info:'Le premier à 11 gagne | Vous à gauche, l\'ordi à droite',pause:'Pause',resume:'Espace ou touchez pour reprendre',win:'Vous avez gagné'+NB+'!',lose:'L\'ordi a gagné',again:'Espace ou touchez pour rejouer',you:'VOUS',cpu:'ORDI',snd:'Son',on:'activé',off:'coupé',lang:'Langue',infoR:'Le premier à 11 gagne | Vous en bas, l\'ordi en haut',helpMR:'Glissez à gauche / droite pour bouger votre raquette | Touchez pour jouer | Le premier à 11 gagne',diff:'Difficulté',easy:'Facile',normal:'Normal',hard:'Difficile',
-  helpD:'W / S, ↑ / ↓ ou souris'+NB+': raquette gauche | Espace'+NB+': jouer / pause | M'+NB+': son | Le premier à 11 gagne',helpM:'Glissez pour bouger la raquette gauche | Touchez pour jouer | Le premier à 11 gagne'},
- 'es':{name:'Español',sub:'Pulsa Espacio o toca para empezar',info:'Gana el primero en llegar a 11 | Tú a la izquierda, la CPU a la derecha',pause:'Pausa',resume:'Pulsa Espacio o toca para seguir',win:'¡Has ganado!',lose:'Gana la CPU',again:'Pulsa Espacio o toca para volver a jugar',you:'TÚ',cpu:'CPU',snd:'Sonido',on:'sí',off:'no',lang:'Idioma',infoR:'Gana el primero en llegar a 11 | Tú abajo, la CPU arriba',helpMR:'Desliza a izquierda / derecha para mover tu pala | Toca para empezar | Gana quien llegue a 11',diff:'Dificultad',easy:'Fácil',normal:'Normal',hard:'Difícil',
-  helpD:'W / S, ↑ / ↓ o ratón: pala izquierda | Espacio: empezar / pausa | M: sonido | Gana el primero en llegar a 11',helpM:'Desliza arriba / abajo para mover la pala izquierda | Toca para empezar | Gana quien llegue a 11'},
- 'it':{name:'Italiano',sub:'Premi Spazio o tocca per iniziare',info:'Vince chi arriva prima a 11 | Tu a sinistra, il computer a destra',pause:'Pausa',resume:'Premi Spazio o tocca per riprendere',win:'Hai vinto!',lose:'Ha vinto il computer',again:'Premi Spazio o tocca per rigiocare',you:'TU',cpu:'CPU',snd:'Audio',on:'sì',off:'no',lang:'Lingua',infoR:'Vince chi arriva prima a 11 | Tu in basso, il computer in alto',helpMR:'Trascina a sinistra / destra per muovere la racchetta | Tocca per iniziare | Vince chi arriva a 11',diff:'Difficoltà',easy:'Facile',normal:'Normale',hard:'Difficile',
-  helpD:'W / S, ↑ / ↓ o mouse: racchetta sinistra | Spazio: avvia / pausa | M: audio | Vince chi arriva prima a 11',helpM:'Trascina su / giù per muovere la racchetta sinistra | Tocca per iniziare | Vince chi arriva a 11'},
- 'de':{name:'Deutsch',sub:'Leertaste drücken oder tippen zum Starten',info:'Wer zuerst 11 Punkte hat, gewinnt | Du links, Computer rechts',pause:'Pause',resume:'Leertaste oder tippen zum Fortsetzen',win:'Du hast gewonnen!',lose:'Der Computer gewinnt',again:'Leertaste oder tippen für eine neue Runde',you:'DU',cpu:'CPU',snd:'Ton',on:'an',off:'aus',lang:'Sprache',infoR:'Wer zuerst 11 Punkte hat, gewinnt | Du unten, Computer oben',helpMR:'Nach links / rechts wischen: dein Schläger | Tippen zum Starten | Wer zuerst 11 hat, gewinnt',diff:'Schwierigkeit',easy:'Leicht',normal:'Mittel',hard:'Schwer',
-  helpD:'W / S, ↑ / ↓ oder Maus: linker Schläger | Leertaste: Start / Pause | M: Ton | Wer zuerst 11 hat, gewinnt',helpM:'Nach oben / unten wischen: linker Schläger | Tippen zum Starten | Wer zuerst 11 hat, gewinnt'},
- 'ru':{name:'Русский',sub:'Нажмите пробел или коснитесь, чтобы начать',info:'Игра до 11 очков | Вы слева, компьютер справа',pause:'Пауза',resume:'Пробел или касание — продолжить',win:'Вы победили!',lose:'Победил компьютер',again:'Пробел или касание — сыграть ещё',you:'ВЫ',cpu:'КОМП',snd:'Звук',on:'вкл',off:'выкл',lang:'Язык',infoR:'Игра до 11 очков | Вы снизу, компьютер сверху',helpMR:'Водите пальцем влево-вправо — ваша ракетка | Коснитесь, чтобы начать | Игра до 11 очков',diff:'Сложность',easy:'Лёгкий',normal:'Средний',hard:'Сложный',
-  helpD:'W / S, ↑ / ↓ или мышь — левая ракетка | Пробел — старт / пауза | M — звук | Игра до 11 очков',helpM:'Водите пальцем вверх-вниз — левая ракетка | Коснитесь, чтобы начать | Игра до 11 очков'}
+ 'en':{name:'English',sub:'Press Space or tap to start',info:'First to 11 wins | You\'re on the left, CPU on the right',pause:'Paused',resume:'Press Space or tap to resume',win:'You win!',lose:'CPU wins',again:'Press Space or tap to play again',you:'YOU',cpu:'CPU',snd:'Sound',on:'On',off:'Off',lang:'Language',infoR:'First to 11 wins | You\'re at the bottom, CPU at the top',helpMR:'Drag left / right to move your paddle | Tap to start | First to 11 wins',diff:'Difficulty',easy:'Easy',normal:'Normal',hard:'Hard',resumeBtn:'Resume',homeBtn:'Main menu',pauseBtn:'Pause',againBtn:'Play again',
+  helpPlayR:'Drag left / right to move your paddle | First to 11 wins',helpPlay:'Drag up / down to move the left paddle | First to 11 wins',helpPaused:'Paused — tap Continue to resume',helpD:'W / S, ↑ / ↓ or mouse: move left paddle | Space: start / pause | M: sound | First to 11 wins',helpM:'Drag up / down to move the left paddle | Tap to start | First to 11 wins'},
+ 'zh-Hant':{name:'繁體中文',sub:'按 Space 或撳一下開始',info:'先到 11 分贏 ｜ 左邊係你，右邊係電腦',pause:'暫停',resume:'按 Space 或撳一下繼續',win:'你贏咗！',lose:'電腦贏咗',again:'按 Space 或撳一下再玩',you:'你',cpu:'電腦',snd:'聲音',on:'開',off:'關',lang:'語言',infoR:'先到 11 分贏 ｜ 下面係你，上面係電腦',helpMR:'手指左右拉控制你塊板 ｜ 撳一下開始 ｜ 先到 11 分贏',diff:'難度',easy:'低',normal:'中',hard:'高',resumeBtn:'繼續',homeBtn:'返主畫面',pauseBtn:'暫停',againBtn:'再玩',
+  helpPlayR:'手指左右拉控制你塊板 ｜ 先到 11 分贏',helpPlay:'手指上下拉控制左邊 ｜ 先到 11 分贏',helpPaused:'暫停中 — 撳「繼續」繼續玩',helpD:'W / S 或 ↑ / ↓ 或滑鼠控制左邊 ｜ Space 開始／暫停 ｜ M 開關聲音 ｜ 先到 11 分贏',helpM:'手指上下拉控制左邊 ｜ 撳一下開始 ｜ 先到 11 分贏'},
+ 'zh-Hans':{name:'简体中文',sub:'按空格键或点击开始',info:'先得 11 分者胜 ｜ 左边是你，右边是电脑',pause:'暂停',resume:'按空格键或点击继续',win:'你赢了！',lose:'电脑赢了',again:'按空格键或点击再玩一局',you:'你',cpu:'电脑',snd:'声音',on:'开',off:'关',lang:'语言',infoR:'先得 11 分者胜 ｜ 下方是你，上方是电脑',helpMR:'手指左右滑动控制你的球拍 ｜ 点击开始 ｜ 先得 11 分者胜',diff:'难度',easy:'低',normal:'中',hard:'高',resumeBtn:'继续',homeBtn:'回主画面',pauseBtn:'暂停',againBtn:'再玩',
+  helpPlayR:'手指左右滑动控制你的球拍 ｜ 先得 11 分者胜',helpPlay:'手指上下滑动控制左边球拍 ｜ 先得 11 分者胜',helpPaused:'暂停中 — 点「继续」继续玩',helpD:'W / S、↑ / ↓ 或鼠标控制左边球拍 ｜ 空格键 开始／暂停 ｜ M 开关声音 ｜ 先得 11 分者胜',helpM:'手指上下滑动控制左边球拍 ｜ 点击开始 ｜ 先得 11 分者胜'},
+ 'ko':{name:'한국어',sub:'스페이스 키를 누르거나 탭해서 시작',info:'먼저 11점을 내면 승리 | 왼쪽은 나, 오른쪽은 컴퓨터',pause:'일시정지',resume:'스페이스 키 또는 탭으로 계속',win:'이겼어요!',lose:'컴퓨터가 이겼어요',again:'스페이스 키 또는 탭으로 다시 하기',you:'나',cpu:'컴퓨터',snd:'소리',on:'켬',off:'끔',lang:'언어',infoR:'먼저 11점을 내면 승리 | 아래는 나, 위는 컴퓨터',helpMR:'좌우로 드래그해 내 패들 조작 | 탭해서 시작 | 먼저 11점 내면 승리',diff:'난이도',easy:'쉬움',normal:'보통',hard:'어려움',resumeBtn:'계속',homeBtn:'메인으로',pauseBtn:'일시정지',againBtn:'다시 하기',
+  helpPlayR:'좌우로 드래그해 내 패들 조작 | 먼저 11점 내면 승리',helpPlay:'위아래로 드래그해 왼쪽 패들 조작 | 먼저 11점 내면 승리',helpPaused:'일시정지 — 「계속」을 눌러 이어하기',helpD:'W / S, ↑ / ↓ 또는 마우스로 왼쪽 패들 조작 | Space 시작/일시정지 | M 소리 | 먼저 11점 내면 승리',helpM:'위아래로 드래그해 왼쪽 패들 조작 | 탭해서 시작 | 먼저 11점 내면 승리'},
+ 'ja':{name:'日本語',sub:'スペースキーかタップでスタート',info:'11点先取で勝ち ｜ 左があなた、右がCPU',pause:'一時停止',resume:'スペースキーかタップで再開',win:'あなたの勝ち！',lose:'CPUの勝ち',again:'スペースキーかタップでもう一度',you:'あなた',cpu:'CPU',snd:'サウンド',on:'オン',off:'オフ',lang:'言語',infoR:'11点先取で勝ち ｜ 下があなた、上がCPU',helpMR:'左右にドラッグで自分のパドルを操作 ｜ タップでスタート ｜ 11点先取で勝ち',diff:'難易度',easy:'かんたん',normal:'ふつう',hard:'むずかしい',resumeBtn:'続ける',homeBtn:'タイトルへ',pauseBtn:'一時停止',againBtn:'もう一度',
+  helpPlayR:'左右にドラッグで自分のパドルを操作 ｜ 11点先取で勝ち',helpPlay:'上下にドラッグで左のパドルを操作 ｜ 11点先取で勝ち',helpPaused:'一時停止中 — 「続ける」で再開',helpD:'W / S・↑ / ↓・マウスで左のパドルを操作 ｜ スペース：開始／一時停止 ｜ M：サウンド ｜ 11点先取で勝ち',helpM:'上下にドラッグで左のパドルを操作 ｜ タップでスタート ｜ 11点先取で勝ち'},
+ 'th':{name:'ไทย',sub:'กด Space หรือแตะเพื่อเริ่ม',info:'ใครได้ 11 แต้มก่อนชนะ | ซ้ายคือคุณ ขวาคือคอมพิวเตอร์',pause:'หยุดชั่วคราว',resume:'กด Space หรือแตะเพื่อเล่นต่อ',win:'คุณชนะ!',lose:'คอมพิวเตอร์ชนะ',again:'กด Space หรือแตะเพื่อเล่นอีกครั้ง',you:'คุณ',cpu:'คอม',snd:'เสียง',on:'เปิด',off:'ปิด',lang:'ภาษา',infoR:'ใครได้ 11 แต้มก่อนชนะ | ล่างคือคุณ บนคือคอมพิวเตอร์',helpMR:'ลากซ้ายขวาเพื่อควบคุมไม้ของคุณ | แตะเพื่อเริ่ม | ได้ 11 แต้มก่อนชนะ',diff:'ระดับ',easy:'ง่าย',normal:'ปานกลาง',hard:'ยาก',resumeBtn:'เล่นต่อ',homeBtn:'หน้าหลัก',pauseBtn:'หยุด',againBtn:'เล่นอีก',
+  helpPlayR:'ลากซ้ายขวาเพื่อควบคุมไม้ของคุณ | ได้ 11 แต้มก่อนชนะ',helpPlay:'ลากขึ้นลงเพื่อควบคุมไม้ฝั่งซ้าย | ได้ 11 แต้มก่อนชนะ',helpPaused:'หยุดชั่วคราว — แตะ「เล่นต่อ」เพื่อเล่นต่อ',helpD:'W / S, ↑ / ↓ หรือเมาส์ ควบคุมไม้ฝั่งซ้าย | Space เริ่ม/หยุด | M เปิด/ปิดเสียง | ได้ 11 แต้มก่อนชนะ',helpM:'ลากขึ้นลงเพื่อควบคุมไม้ฝั่งซ้าย | แตะเพื่อเริ่ม | ได้ 11 แต้มก่อนชนะ'},
+ 'fr':{name:'Français',sub:'Appuyez sur Espace ou touchez pour jouer',info:'Le premier à 11 gagne | Vous à gauche, l\'ordi à droite',pause:'Pause',resume:'Espace ou touchez pour reprendre',win:'Vous avez gagné'+NB+'!',lose:'L\'ordi a gagné',again:'Espace ou touchez pour rejouer',you:'VOUS',cpu:'ORDI',snd:'Son',on:'activé',off:'coupé',lang:'Langue',infoR:'Le premier à 11 gagne | Vous en bas, l\'ordi en haut',helpMR:'Glissez à gauche / droite pour bouger votre raquette | Touchez pour jouer | Le premier à 11 gagne',diff:'Difficulté',easy:'Facile',normal:'Normal',hard:'Difficile',resumeBtn:'Reprendre',homeBtn:'Menu principal',pauseBtn:'Pause',againBtn:'Rejouer',
+  helpPlayR:'Glissez à gauche / droite pour bouger votre raquette | Le premier à 11 gagne',helpPlay:'Glissez pour bouger la raquette gauche | Le premier à 11 gagne',helpPaused:'Pause — touchez Reprendre',helpD:'W / S, ↑ / ↓ ou souris'+NB+': raquette gauche | Espace'+NB+': jouer / pause | M'+NB+': son | Le premier à 11 gagne',helpM:'Glissez pour bouger la raquette gauche | Touchez pour jouer | Le premier à 11 gagne'},
+ 'es':{name:'Español',sub:'Pulsa Espacio o toca para empezar',info:'Gana el primero en llegar a 11 | Tú a la izquierda, la CPU a la derecha',pause:'Pausa',resume:'Pulsa Espacio o toca para seguir',win:'¡Has ganado!',lose:'Gana la CPU',again:'Pulsa Espacio o toca para volver a jugar',you:'TÚ',cpu:'CPU',snd:'Sonido',on:'sí',off:'no',lang:'Idioma',infoR:'Gana el primero en llegar a 11 | Tú abajo, la CPU arriba',helpMR:'Desliza a izquierda / derecha para mover tu pala | Toca para empezar | Gana quien llegue a 11',diff:'Dificultad',easy:'Fácil',normal:'Normal',hard:'Difícil',resumeBtn:'Continuar',homeBtn:'Menú principal',pauseBtn:'Pausa',againBtn:'Jugar de nuevo',
+  helpPlayR:'Desliza a izquierda / derecha para mover tu pala | Gana quien llegue a 11',helpPlay:'Desliza arriba / abajo para mover la pala izquierda | Gana quien llegue a 11',helpPaused:'Pausa — toca Continuar',helpD:'W / S, ↑ / ↓ o ratón: pala izquierda | Espacio: empezar / pausa | M: sonido | Gana el primero en llegar a 11',helpM:'Desliza arriba / abajo para mover la pala izquierda | Toca para empezar | Gana quien llegue a 11'},
+ 'it':{name:'Italiano',sub:'Premi Spazio o tocca per iniziare',info:'Vince chi arriva prima a 11 | Tu a sinistra, il computer a destra',pause:'Pausa',resume:'Premi Spazio o tocca per riprendere',win:'Hai vinto!',lose:'Ha vinto il computer',again:'Premi Spazio o tocca per rigiocare',you:'TU',cpu:'CPU',snd:'Audio',on:'sì',off:'no',lang:'Lingua',infoR:'Vince chi arriva prima a 11 | Tu in basso, il computer in alto',helpMR:'Trascina a sinistra / destra per muovere la racchetta | Tocca per iniziare | Vince chi arriva a 11',diff:'Difficoltà',easy:'Facile',normal:'Normale',hard:'Difficile',resumeBtn:'Continua',homeBtn:'Menu principale',pauseBtn:'Pausa',againBtn:'Rigioca',
+  helpPlayR:'Trascina a sinistra / destra per muovere la racchetta | Vince chi arriva a 11',helpPlay:'Trascina su / giù per muovere la racchetta sinistra | Vince chi arriva a 11',helpPaused:'Pausa — tocca Continua',helpD:'W / S, ↑ / ↓ o mouse: racchetta sinistra | Spazio: avvia / pausa | M: audio | Vince chi arriva prima a 11',helpM:'Trascina su / giù per muovere la racchetta sinistra | Tocca per iniziare | Vince chi arriva a 11'},
+ 'de':{name:'Deutsch',sub:'Leertaste drücken oder tippen zum Starten',info:'Wer zuerst 11 Punkte hat, gewinnt | Du links, Computer rechts',pause:'Pause',resume:'Leertaste oder tippen zum Fortsetzen',win:'Du hast gewonnen!',lose:'Der Computer gewinnt',again:'Leertaste oder tippen für eine neue Runde',you:'DU',cpu:'CPU',snd:'Ton',on:'an',off:'aus',lang:'Sprache',infoR:'Wer zuerst 11 Punkte hat, gewinnt | Du unten, Computer oben',helpMR:'Nach links / rechts wischen: dein Schläger | Tippen zum Starten | Wer zuerst 11 hat, gewinnt',diff:'Schwierigkeit',easy:'Leicht',normal:'Mittel',hard:'Schwer',resumeBtn:'Weiter',homeBtn:'Hauptmenü',pauseBtn:'Pause',againBtn:'Nochmal',
+  helpPlayR:'Nach links / rechts wischen: dein Schläger | Wer zuerst 11 hat, gewinnt',helpPlay:'Nach oben / unten wischen: linker Schläger | Wer zuerst 11 hat, gewinnt',helpPaused:'Pause — tippe auf Weiter',helpD:'W / S, ↑ / ↓ oder Maus: linker Schläger | Leertaste: Start / Pause | M: Ton | Wer zuerst 11 hat, gewinnt',helpM:'Nach oben / unten wischen: linker Schläger | Tippen zum Starten | Wer zuerst 11 hat, gewinnt'},
+ 'ru':{name:'Русский',sub:'Нажмите пробел или коснитесь, чтобы начать',info:'Игра до 11 очков | Вы слева, компьютер справа',pause:'Пауза',resume:'Пробел или касание — продолжить',win:'Вы победили!',lose:'Победил компьютер',again:'Пробел или касание — сыграть ещё',you:'ВЫ',cpu:'КОМП',snd:'Звук',on:'вкл',off:'выкл',lang:'Язык',infoR:'Игра до 11 очков | Вы снизу, компьютер сверху',helpMR:'Водите пальцем влево-вправо — ваша ракетка | Коснитесь, чтобы начать | Игра до 11 очков',diff:'Сложность',easy:'Лёгкий',normal:'Средний',hard:'Сложный',resumeBtn:'Продолжить',homeBtn:'В меню',pauseBtn:'Пауза',againBtn:'Ещё раз',
+  helpPlayR:'Водите пальцем влево-вправо — ваша ракетка | Игра до 11 очков',helpPlay:'Водите пальцем вверх-вниз — левая ракетка | Игра до 11 очков',helpPaused:'Пауза — нажмите «Продолжить»',helpD:'W / S, ↑ / ↓ или мышь — левая ракетка | Пробел — старт / пауза | M — звук | Игра до 11 очков',helpM:'Водите пальцем вверх-вниз — левая ракетка | Коснитесь, чтобы начать | Игра до 11 очков'}
 };
 const LANGS=['en','zh-Hant','zh-Hans','ko','ja','th','fr','es','it','de','ru'];
 const HTMLLANG={'en':'en','zh-Hant':'zh-HK','zh-Hans':'zh-CN','ko':'ko','ja':'ja','th':'th','fr':'fr','es':'es','it':'it','de':'de','ru':'ru'};
@@ -266,6 +284,7 @@ function resize(){
   OX=CW/2-S*(x0+x1)/2;OY=top+av*(ROT?.48:.5)-S*(y0+y1)/2;
   buildBG();
   if(wasRot!==ROT&&uiReady)applyLang();
+  else if(uiReady){hudLabels();helpText();}
 }
 addEventListener('resize',resize);resize();
 
@@ -280,15 +299,33 @@ function reset(dir){const a=Math.random()*.8-.4,sp=DF.ball0;ball={x:W/2,y:H/2,vx
 reset(Math.random()<.5?1:-1);
 
 /* ---------- audio (off by default) ---------- */
-let AC=null,sound=false;const sndBtn=document.getElementById('snd');
+let AC=null,sound=false;
+const sndBtn=document.getElementById('snd'),pauseBtn=document.getElementById('pauseBtn');
+const topL=document.getElementById('topL'),topR=document.getElementById('topR'),diffTag=document.getElementById('diffTag');
+const menuUI=document.getElementById('menuUI'),menuTitle=document.getElementById('menuTitle'),menuSub=document.getElementById('menuSub'),menuActs=document.getElementById('menuActs');
 function unlock(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();}
 function blip(f1,f2,dur,type,vol){if(!sound||!AC)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
   o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+dur);
   g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur+.03);}
 function toggleSound(){unlock();sound=!sound;sndLabel();if(sound)blip(660,990,.08,'square',.05);}
-function sndLabel(){const sep=LG==='fr'?NB+':'+NB:(/^(zh|ja)/.test(LG)?'：':': ');sndBtn.textContent=(sound?'🔊 ':'🔇 ')+T('snd')+sep+(sound?T('on'):T('off'));sndBtn.setAttribute('aria-label',T('snd'));}
+function narrowHud(){return innerWidth<420;}
+function sndLabel(){const sep=LG==='fr'?NB+':'+NB:(/^(zh|ja)/.test(LG)?'：':': ');
+  const icon=sound?'🔊 ':'🔇 ',val=sound?T('on'):T('off');
+  sndBtn.textContent=narrowHud()?icon+val:icon+T('snd')+sep+val;
+  sndBtn.setAttribute('aria-label',T('snd'));}
+function hudLabels(){diffTag.textContent=narrowHud()?T(DK):diffText();diffTag.title=diffText();
+  pauseBtn.setAttribute('aria-label',T('pauseBtn'));pauseBtn.textContent='⏸';sndLabel();}
+function helpText(){
+  const d=helpEl.querySelector('.d'),m=helpEl.querySelector('.m');
+  if(state==='play'){d.textContent=T('helpD');m.textContent=T(ROT?'helpPlayR':'helpPlay');}
+  else if(state==='paused'){d.textContent=T('helpPaused');m.textContent=T('helpPaused');}
+  else if(state==='over'){d.textContent=T('helpD');m.textContent=T('again');}
+  else{d.textContent=T('helpD');m.textContent=T(ROT?'helpMR':'helpM');}
+}
+function blockHud(el){['pointerdown','touchstart','mousedown','click','touchend'].forEach(ev=>el.addEventListener(ev,e=>{e.stopPropagation();},{passive:false}));}
+[sndBtn,pauseBtn,topL,topR,menuUI].forEach(blockHud);
 sndBtn.addEventListener('click',e=>{e.stopPropagation();toggleSound();sndBtn.blur();});
-['pointerdown','touchstart'].forEach(ev=>sndBtn.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
+pauseBtn.addEventListener('click',e=>{e.stopPropagation();if(state==='play')doPause();});
 addEventListener('pointerdown',unlock,{once:true});
 
 /* ---------- language selector ---------- */
@@ -299,11 +336,10 @@ for(const k of LANGS){const b=document.createElement('button');b.type='button';b
   b.addEventListener('click',e=>{e.stopPropagation();setLang(k,true);closeMenu();});langGrid.appendChild(b);}
 function applyLang(){
   document.documentElement.lang=HTMLLANG[LG];FONT=font();document.documentElement.style.setProperty('--ff',FONT);
-  helpEl.querySelector('.d').textContent=T('helpD');helpEl.querySelector('.m').textContent=T(ROT?'helpMR':'helpM');
   document.getElementById('langName').textContent=L[LG].name;document.getElementById('langTitle').textContent=T('lang').toUpperCase()==='LANGUAGE'?'LANGUAGE':T('lang')+' · LANGUAGE';
   langBtn.setAttribute('aria-label',T('lang')+' / Language');
   for(const b of langGrid.children)b.setAttribute('aria-selected',b.dataset.k===LG?'true':'false');
-  sndLabel();diffLabels();uiReady=true;
+  sndLabel();diffLabels();hudLabels();helpText();uiReady=true;
 }
 function setLang(k,save){LG=k;if(save){try{localStorage.setItem('btcpong.lang',k);}catch(e){}}applyLang();}
 let menuOpen=false;
@@ -319,7 +355,7 @@ function diffLabels(){document.getElementById('diffLb').textContent=T('diff')+(L
   diffEl.setAttribute('aria-label',T('diff'));
   for(const b of diffBtns){b.textContent=T(b.dataset.d);const on=b.dataset.d===DK;b.setAttribute('aria-checked',on?'true':'false');b.tabIndex=on?0:-1;}}
 function setDiff(k,save){if(!DIFFS[k])return;DK=k;DF=DIFFS[k];if(save){try{localStorage.setItem('btcpong.diff',k);}catch(e){}}
-  if(state==='start')reset(Math.random()<.5?1:-1);diffLabels();}
+  if(state==='start')reset(Math.random()<.5?1:-1);diffLabels();hudLabels();}
 for(const b of diffBtns){
   b.addEventListener('click',e=>{e.stopPropagation();unlock();setDiff(b.dataset.d,true);if(e.detail>0)b.blur();else b.focus({preventScroll:true});});
   b.addEventListener('keydown',e=>{const i=DKEYS.indexOf(b.dataset.d);let j=-1;
@@ -328,25 +364,50 @@ for(const b of diffBtns){
 for(const el of [diffEl,ctlEl])['pointerdown','touchstart','mousedown','click'].forEach(ev=>el.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
 applyLang();
 
+/* ---------- pause / menu ---------- */
+let menuMode=null; // 'paused' | 'over' | null
+function mkBtn(label,cls,fn){const b=document.createElement('button');b.type='button';if(cls)b.className=cls;b.textContent=label;b.addEventListener('click',e=>{e.stopPropagation();fn();});blockHud(b);return b;}
+function showMenu(mode){
+  menuMode=mode;menuActs.innerHTML='';menuUI.classList.add('on');
+  if(mode==='paused'){menuTitle.textContent=T('pause');menuSub.textContent=diffText();
+    menuActs.appendChild(mkBtn(T('resumeBtn'),'',doResume));
+    menuActs.appendChild(mkBtn(T('homeBtn'),'sec',goHome));}
+  else{const win=p1.s>p2.s;menuTitle.textContent=win?T('win'):T('lose');menuTitle.style.color=win?ORANGE:CYAN;
+    menuSub.textContent=p1.s+' : '+p2.s+'  ·  '+diffText();
+    menuActs.appendChild(mkBtn(T('againBtn'),'',playAgain));
+    menuActs.appendChild(mkBtn(T('homeBtn'),'sec',goHome));}
+  hudSync();helpText();
+}
+function hideMenu(){menuMode=null;menuUI.classList.remove('on');menuTitle.style.color='';hudSync();helpText();}
+function doPause(){if(state!=='play'||DEMO)return;state='paused';showMenu('paused');}
+function doResume(){if(state!=='paused')return;state='play';hideMenu();mouseY=null;}
+function goHome(){p1.s=p2.s=0;state='start';reset(Math.random()<.5?1:-1);trail.length=0;parts.length=bolts.length=rings.length=pops.length=0;hideMenu();mouseY=null;hudSync();helpText();}
+function playAgain(){p1.s=p2.s=0;reset(1);state='play';hideMenu();mouseY=null;}
+function startGame(){if(state==='start'){reset(Math.random()<.5?1:-1);state='play';hudSync();helpText();}}
+menuUI.addEventListener('click',e=>{e.stopPropagation();}); // tapping the dim overlay does NOT resume
+
 /* ---------- input ---------- */
-function startOrResume(){if(state==='over'){p1.s=p2.s=0;reset(1);}else if(state==='start')reset(Math.random()<.5?1:-1);if(state!=='play')state='play';}
 addEventListener('keydown',e=>{
   if(menuOpen){if(e.key==='Escape'){e.preventDefault();closeMenu();}
     else if(e.key.startsWith('Arrow')){e.preventDefault();const bs=[...langGrid.children],i=Math.max(0,bs.indexOf(document.activeElement)),cols=Math.max(1,Math.round(langGrid.clientWidth/(bs[0].offsetWidth+8))),d={ArrowLeft:-1,ArrowRight:1,ArrowUp:-cols,ArrowDown:cols}[e.key];bs[clamp(i+d,0,bs.length-1)].focus();}
     return;}
-  if((document.activeElement===langBtn||diffBtns.includes(document.activeElement))&&(e.code==='Space'||e.key==='Enter'))return; // let the button handle it
+  if(menuMode){if(e.key==='Escape'&&menuMode==='paused'){e.preventDefault();doResume();return;}
+    if(e.code==='Space'||e.key==='Enter'){e.preventDefault();if(menuMode==='paused')doResume();else playAgain();return;}
+    return;}
+  if((document.activeElement===langBtn||diffBtns.includes(document.activeElement)||document.activeElement===sndBtn||document.activeElement===pauseBtn)&&(e.code==='Space'||e.key==='Enter'))return;
   if(state==='start'&&!DEMO&&/^[123]$/.test(e.key)){setDiff(DKEYS[+e.key-1],true);return;}
   keys[e.key]=true;unlock();
-  if(e.code==='Space'){e.preventDefault();if(state==='play')state='paused';else startOrResume();}
+  if(e.code==='Space'){e.preventDefault();if(state==='play')doPause();else if(state==='start')startGame();}
+  if(e.key==='Escape'){e.preventDefault();if(state==='play')doPause();}
   if(e.key==='m'||e.key==='M')toggleSound();
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();});
 addEventListener('keyup',e=>keys[e.key]=false);
 function pos(e){const t=e.touches?e.touches[0]:e;return unproj(t.clientX*DPR,t.clientY*DPR);}
-cv.addEventListener('mousemove',e=>mouseY=pos(e));
-cv.addEventListener('touchmove',e=>{e.preventDefault();mouseY=pos(e);},{passive:false});
-cv.addEventListener('click',()=>{if(state!=='play')startOrResume();});
-cv.addEventListener('touchstart',e=>{e.preventDefault();unlock();mouseY=pos(e);if(state!=='play')startOrResume();},{passive:false});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'&&!DEMO)state='paused';});
+cv.addEventListener('mousemove',e=>{if(state==='play')mouseY=pos(e);});
+cv.addEventListener('touchmove',e=>{e.preventDefault();if(state==='play')mouseY=pos(e);},{passive:false});
+cv.addEventListener('click',()=>{if(state==='start')startGame();});
+cv.addEventListener('touchstart',e=>{e.preventDefault();unlock();if(state==='play')mouseY=pos(e);else if(state==='start')startGame();},{passive:false});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'&&!DEMO)doPause();});
 
 /* ---------- effects ---------- */
 function addPart(p){parts.push(p);if(parts.length>MAXP)parts.splice(0,parts.length-MAXP);}
@@ -444,7 +505,7 @@ function step(){
   p1.glow*=.92;p2.glow*=.92;shake*=.85;flash*=.86;
 }
 function wallFx(){for(let i=0;i<8;i++){const a=R(0,TAU),s=R(1,4);addPart({t:0,x:ball.x,y:ball.y<H/2?0:H,h:BALL/2,vx:Math.cos(a)*s,vy:Math.sin(a)*s,vh:R(0,3),life:R(12,22),c:'gold'});}blip(300,220,.05,'triangle',.04);}
-function score(dir){if(p1.s>=WIN||p2.s>=WIN){if(DEMO){p1.s=p2.s=0;}else state='over';}reset(dir);}
+function score(dir){if(p1.s>=WIN||p2.s>=WIN){if(DEMO){p1.s=p2.s=0;}else{state='over';showMenu('over');}}reset(dir);}
 
 /* ---------- rendering ---------- */
 function line(a,b){ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);}
@@ -454,13 +515,6 @@ function boardText(txt,x,y,h,size,fill,alpha,ff,maxW,P){
   if(maxW){const w=ctx.measureText(txt).width;if(w>maxW)ctx.font=`900 ${size*maxW/w}px ${ff||'"Arial Black","Segoe UI",Arial,sans-serif'}`;}ctx.fillText(txt,0,0);
   ctx.setTransform(1,0,0,1,0,0);
 }
-function diffHud(){ // small difficulty tag near the scores, with a dark backing so the centre line doesn't cut through it
-  const p=ROT?pr(W/2+150,H-120,0):pr(W/2,24,0),fs=Math.max(11*DPR,15*p[2]);
-  ctx.font=`600 ${fs}px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';
-  const txt=diffText(),w=ctx.measureText(txt).width+fs*1.1,h=fs*1.6,x=p[0]-w/2,y=p[1]-h/2,r=h/2;
-  ctx.globalAlpha=1;ctx.fillStyle='rgba(4,9,24,.78)';ctx.strokeStyle='rgba(255,178,56,.5)';ctx.lineWidth=Math.max(1,DPR);
-  ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fill();ctx.stroke();
-  ctx.fillStyle='#ffd9a0';ctx.fillText(txt,p[0],p[1]+fs*.04);}
 function drawChip(){
   const pulse=.55+.45*Math.sin(tsec*2.2),near=clamp(1-Math.hypot(ball.x-W/2,ball.y-H/2)/220,0,1)*(state==='start'?0:1);
   const c=pd(W/2,H/2,0);
@@ -573,35 +627,31 @@ function drawPops(){
   ctx.globalAlpha=1;
 }
 function fitText(txt,x,y,size,weight,maxW){ctx.font=`${weight} ${size}px ${FONT}`;const w=ctx.measureText(txt).width;if(w>maxW)ctx.font=`${weight} ${size*maxW/w}px ${FONT}`;ctx.fillText(txt,x,y);}
-let langShown=false;
-function langUI(){const show=state==='start'&&!DEMO;if(show!==langShown){langShown=show;langBtn.classList.toggle('on',show);ctlEl.classList.toggle('on',show);if(!show&&menuOpen)closeMenu();}
-  if(show){const u=Math.min(CW,CH*1.4),y=(CH*.5+u*.125)/DPR+Math.max(18,u*.05/DPR);
-    const hb=helpEl.getBoundingClientRect().top,bh=ctlEl.offsetHeight||34;ctlEl.style.top=Math.max((CH*.5+u*.135)/DPR+4,Math.min(y,hb-bh-8))+'px';}}
+let langShown=false,hudShown=false;
+function hudSync(){
+  const showHud=state==='play'&&!DEMO;
+  if(showHud!==hudShown){hudShown=showHud;topL.classList.toggle('on',showHud);topR.classList.toggle('on',showHud);}
+  if(showHud){hudLabels();}
+  const showStart=state==='start'&&!DEMO;
+  if(showStart!==langShown){langShown=showStart;langBtn.classList.toggle('on',showStart);ctlEl.classList.toggle('on',showStart);if(!showStart&&menuOpen)closeMenu();}
+  if(showStart){const u=Math.min(CW,CH*1.4),y=(CH*.5+u*.125)/DPR+Math.max(18,u*.05/DPR);
+    const hb=helpEl.getBoundingClientRect().top,bh=ctlEl.offsetHeight||34;ctlEl.style.top=Math.max((CH*.5+u*.135)/DPR+4,Math.min(y,hb-bh-8))+'px';}
+}
 function overlay(){
   const u=Math.min(CW,CH*1.4),cx=CW/2,cy=CH*.5;
-  langUI();
-  if(state==='play')return;
+  hudSync();
+  if(state!=='start')return; // pause/over use the DOM menu
   ctx.fillStyle='rgba(2,5,15,.55)';ctx.fillRect(0,0,CW,CH);
   ctx.textAlign='center';ctx.textBaseline='alphabetic';
-  if(state==='start'){
-    const cs=u*.13,coinY=cy-u*.2;
-    ctx.globalCompositeOperation='lighter';glow(SP.gold,cx,coinY,cs*1.6,.55+.2*Math.sin(tsec*2.4));ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
-    if(img.complete&&img.naturalWidth){ctx.save();ctx.translate(cx,coinY);ctx.scale(Math.cos(tsec*1.6),1);ctx.drawImage(img,-cs/2,-cs/2,cs,cs);ctx.restore();}
-    ctx.font=`900 ${u*.085}px "Arial Black","Segoe UI",Arial,sans-serif`;
-    const g=ctx.createLinearGradient(0,cy-u*.09,0,cy);g.addColorStop(0,'#fff1c9');g.addColorStop(.55,'#ffb238');g.addColorStop(1,'#f7931a');
-    ctx.save();ctx.shadowColor='rgba(247,147,26,.9)';ctx.shadowBlur=u*.03;ctx.fillStyle=g;ctx.fillText('BITCOIN PONG',cx,cy);ctx.restore();
-    const mw=CW*.92;
-    ctx.fillStyle='#ffe2b0';ctx.globalAlpha=.75+.25*Math.sin(tsec*4);fitText(T('sub'),cx,cy+u*.075,u*.036,400,mw);ctx.globalAlpha=1;
-    ctx.fillStyle='rgba(180,200,255,.75)';fitText(T(ROT?'infoR':'info'),cx,cy+u*.125,u*.024,400,mw);
-  }else if(state==='paused'){
-    const mw=CW*.92;ctx.fillStyle='#ffe2b0';fitText(T('pause'),cx,cy,u*.07,900,mw);
-    ctx.fillStyle='rgba(200,215,255,.8)';fitText(T('resume'),cx,cy+u*.06,u*.03,400,mw);
-  }else if(state==='over'){
-    const win=p1.s>p2.s,mw=CW*.92;
-    ctx.save();ctx.shadowColor=win?ORANGE:CYAN;ctx.shadowBlur=u*.03;ctx.fillStyle=win?ORANGE:CYAN;fitText(win?T('win'):T('lose'),cx,cy,u*.08,900,mw);ctx.restore();
-    ctx.fillStyle='#ffe2b0';fitText(`${p1.s} : ${p2.s} ${/^(zh|ja)/.test(LG)?'｜':'|'} ${T('again')}`,cx,cy+u*.07,u*.032,400,mw);
-    ctx.fillStyle='rgba(255,207,122,.8)';fitText(diffText(),cx,cy+u*.12,u*.026,600,mw);
-  }
+  const cs=u*.13,coinY=cy-u*.2;
+  ctx.globalCompositeOperation='lighter';glow(SP.gold,cx,coinY,cs*1.6,.55+.2*Math.sin(tsec*2.4));ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
+  if(img.complete&&img.naturalWidth){ctx.save();ctx.translate(cx,coinY);ctx.scale(Math.cos(tsec*1.6),1);ctx.drawImage(img,-cs/2,-cs/2,cs,cs);ctx.restore();}
+  ctx.font=`900 ${u*.085}px "Arial Black","Segoe UI",Arial,sans-serif`;
+  const g=ctx.createLinearGradient(0,cy-u*.09,0,cy);g.addColorStop(0,'#fff1c9');g.addColorStop(.55,'#ffb238');g.addColorStop(1,'#f7931a');
+  ctx.save();ctx.shadowColor='rgba(247,147,26,.9)';ctx.shadowBlur=u*.03;ctx.fillStyle=g;ctx.fillText('BITCOIN PONG',cx,cy);ctx.restore();
+  const mw=CW*.92;
+  ctx.fillStyle='#ffe2b0';ctx.globalAlpha=.75+.25*Math.sin(tsec*4);fitText(T('sub'),cx,cy+u*.075,u*.036,400,mw);ctx.globalAlpha=1;
+  ctx.fillStyle='rgba(180,200,255,.75)';fitText(T(ROT?'infoR':'info'),cx,cy+u*.125,u*.024,400,mw);
 }
 function draw(){
   const sx=shake>.3?R(-shake,shake)*DPR:0,sy=shake>.3?R(-shake,shake)*DPR:0;
@@ -619,7 +669,7 @@ function draw(){
    else if(state!=='start'){boardText(p1.s,W/2-150,70,0,74,ORANGE,.9);boardText(p2.s,W/2+150,70,0,74,CYAN,.9);
     boardText(T('you'),W/2-205,70,0,22,'#ffc1a8',.65,lf,130);boardText(T('cpu'),W/2+95,70,0,22,'#b8f6ff',.65,lf,130);
 }
-   if(state!=='start')diffHud();}ctx.globalAlpha=1;
+}ctx.globalAlpha=1;
   if(state!=='start')drawBall();
   drawPaddle(p1,-1);drawPaddle(p2,1);
   drawFx();drawDust();drawPops();
@@ -640,7 +690,7 @@ function loop(now){
   draw();requestAnimationFrame(loop);
 }
 // debug: ?demo=1&freeze=N fast-forwards N steps, then freezes a few frames after the next paddle hit (for screenshots)
-{const st=Q.get('state');if(!DEMO&&(st==='paused'||st==='over')){state=st;if(st==='over'){p1.s=+(Q.get('s1')||11);p2.s=+(Q.get('s2')||7);}}}
+{const st=Q.get('state');if(!DEMO&&(st==='paused'||st==='over')){state=st;if(st==='over'){p1.s=+(Q.get('s1')||11);p2.s=+(Q.get('s2')||7);}setTimeout(()=>showMenu(st),0);}}
 if(Q.has('menu')&&!DEMO)setTimeout(openMenu,50);
 if(DEMO&&FREEZE){for(let i=0;i<20000&&!frozen;i++){step();if(freezeAt>0&&steps>=freezeAt)frozen=true;}}
 // test switch: ?simtest=N plays N games per level with scripted players and writes stats into <pre id="simout">

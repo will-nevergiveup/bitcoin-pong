@@ -10,6 +10,15 @@ A classic Pong game in a single HTML file, with the ball replaced by the Bitcoin
 - M or the top-right button: sound on / off
 - First to 11 points wins
 
+## Pause
+During play a ⏸ button sits next to the sound toggle (top-right). Tap it to pause.
+- **Continue / Resume** — keep playing
+- **Main menu** — reset the score and return to the start screen (where you can change language and difficulty)
+
+On a keyboard: Space toggles pause, Esc pauses. Tapping the dimmed background does not resume.
+
+The win / lose screen has **Play again** and **Main menu**.
+
 ## Difficulty
 Pick **Easy / Normal / Hard** (繁體中文: 難度：低 / 中 / 高) on the start screen — tap a pill, press 1 / 2 / 3, or use the arrow keys when it is focused.
 - Easy: slower serve and speed-up, a slow CPU that reacts late and misjudges often — easy to win.
